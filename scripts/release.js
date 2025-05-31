@@ -65,9 +65,10 @@ function bumpVersions() {
     });
 }
 
-function buildAssets() {
+async function buildAssets() {
     console.log(chalk.blue('🔨 Building assets...'));
-    require('./build');
+    const buildAll = require('./build');
+    await buildAll(); // Await buildAll to ensure build finishes before proceeding
 }
 
 function commitAndTagVersion() {
@@ -83,16 +84,28 @@ function pushToGitHub() {
     execSync(`git push origin ${repo.branch} --tags`, { stdio: 'inherit' });
 }
 
+// Helper to promisify runFromPackage, assuming it uses exec under the hood (you may need to adjust based on your utils)
+function runFromPackageAsync(pkg, cmd) {
+    return new Promise((resolve, reject) => {
+        runFromPackage(pkg, cmd, (error, stdout, stderr) => {
+            if (error) {
+                console.error(chalk.red(`❌ Error publishing ${pkg}:`), stderr || error);
+                return reject(error);
+            }
+            console.log(stdout);
+            resolve();
+        });
+    });
+}
+
 async function publishToNpm() {
     for (const pkg of packages) {
         console.log(chalk.yellow(`🚀 Publishing @vkm-js/${pkg}...`));
-        await new Promise((resolve, reject) => {
-            runFromPackage(pkg, 'npm publish --access public');
-            // runFromPackage uses exec, which is async but does not provide a Promise
-            // so here you might want to refactor runFromPackage to support Promises or sync exec
-            // For now, just resolve immediately:
-            resolve();
-        });
+        try {
+            await runFromPackageAsync(pkg, 'npm publish --access public');
+        } catch (e) {
+            console.error(chalk.red(`Failed to publish ${pkg}. Continuing with next.`));
+        }
     }
     console.log(chalk.green('🎉 All packages published to npm!'));
 }

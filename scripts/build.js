@@ -4,8 +4,8 @@ const path = require('path');
 const zlib = require('zlib');
 const esbuild = require('esbuild');
 
-// Auto-detect all packages in ./packages
-const packages = fs.readdirSync('./packages').filter((dir) =>
+// Auto-detect all packages in ./packages with a builds folder
+const packages = fs.readdirSync('./packages').filter(dir =>
     fs.existsSync(`./packages/${dir}/builds`)
 );
 
@@ -13,7 +13,7 @@ async function buildAll() {
     for (const pkg of packages) {
         const distPath = `./packages/${pkg}/dist`;
         if (!fs.existsSync(distPath)) {
-            fs.mkdirSync(distPath, 0o744);
+            fs.mkdirSync(distPath, { mode: 0o744, recursive: true });
         }
 
         const files = fs.readdirSync(`./packages/${pkg}/builds`);
@@ -29,7 +29,7 @@ async function bundleFile(packageName, file) {
 
     const buildTypes = {
         'cdn.js': async () => {
-            // Non-minified version
+            // Non-minified
             await build({
                 entryPoints: [inputPath],
                 outfile: `${distPath}/${file}`,
@@ -38,7 +38,7 @@ async function bundleFile(packageName, file) {
                 define: { CDN: 'true' },
             });
 
-            // Minified version
+            // Minified
             await build({
                 entryPoints: [inputPath],
                 outfile: `${distPath}/${file.replace('.js', '.min.js')}`,
@@ -86,9 +86,26 @@ function build(options) {
     options.define = options.define || {};
     options.define['process.env.NODE_ENV'] = process.argv.includes('--watch') ? `'development'` : `'production'`;
 
+    const isWatch = process.argv.includes('--watch');
+
+    // Only add watch if esbuild supports it (>=0.8.0)
+    const esbuildVersion = require('esbuild/package.json').version;
+    const [major, minor] = esbuildVersion.split('.').map(Number);
+    const supportsWatch = major > 0 || (major === 0 && minor >= 8);
+
     return esbuild.build({
-        logLevel: process.argv.includes('--watch') ? 'info' : 'silent',
-        watch: process.argv.includes('--watch'),
+        logLevel: isWatch ? 'info' : 'silent',
+        ...(isWatch && supportsWatch ? {
+            watch: {
+                onRebuild(error, result) {
+                    if (error) {
+                        console.error('Watch build failed:', error);
+                    } else {
+                        console.log('Watch build succeeded');
+                    }
+                }
+            }
+        } : {}),
         ...options,
     }).catch((err) => {
         console.error('Build failed:', err);
@@ -97,17 +114,22 @@ function build(options) {
 }
 
 function outputSize(packageName, file) {
-    const size = bytesToSize(zlib.brotliCompressSync(fs.readFileSync(file)).length);
-    console.log(`\x1b[32m✔ ${packageName}: ${path.basename(file)} = ${size}`);
+    try {
+        const fileBuffer = fs.readFileSync(file);
+        const compressed = zlib.brotliCompressSync(fileBuffer);
+        const size = bytesToSize(compressed.length);
+        console.log(`\x1b[32m✔ ${packageName}: ${path.basename(file)} = ${size}`);
+    } catch (err) {
+        console.error(`Failed to read or compress file ${file}:`, err);
+    }
 }
 
 function bytesToSize(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     if (bytes === 0) return 'n/a';
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
     if (i === 0) return `${bytes} ${sizes[i]}`;
     return `${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`;
 }
 
-// Export the main async build function
 module.exports = buildAll;
