@@ -78,7 +78,7 @@ export default function (Alpine) {
         }
 
         if (!el.id) {
-            el.id = randomKey();
+            el.id = crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36);
         }
 
         el.setAttribute('x-data', 'modal');

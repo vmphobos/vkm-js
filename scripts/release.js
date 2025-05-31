@@ -1,6 +1,8 @@
 let { runFromPackage, writeToPackageDotJson, ask, run } = require('./utils');
 let chalk = require('chalk');
 let { execSync } = require('child_process');
+let fs = require('fs');
+let path = require('path');
 let axios = require('axios').create({
     headers: { Authorization: `Bearer ${require('./.env.json').GITHUB_TOKEN}` }
 });
@@ -24,10 +26,30 @@ let repo = {
 };
 
 (async () => {
-    await askStep('Bump versions?', bumpVersions);
+    const versionChanged = checkVersionChanged();
+
+    if (versionChanged) {
+        await askStep('Bump versions?', bumpVersions);
+    } else {
+        console.log(chalk.yellow('⚠️ Version unchanged, skipping version bump.'));
+    }
+
     await askStep('Build assets?', buildAssets);
+
+    // Commit any changes (version bump or build output) if any
+    if (hasGitChanges()) {
+        commitChanges(versionChanged);
+        await askStep('Push to GitHub?', pushToGitHub);
+    } else {
+        console.log(chalk.yellow('No changes detected, skipping commit and push.'));
+    }
+
+    if (!versionChanged) {
+        console.log(chalk.yellow('Version did not change, skipping tag, release, and publish steps.'));
+        return;
+    }
+
     await askStep('Commit and tag version?', commitAndTagVersion);
-    await askStep('Push to GitHub?', pushToGitHub);
 
     const ready = await ask('Ready to publish this version? (y/n) ');
 
@@ -48,6 +70,34 @@ let repo = {
         console.log(chalk.yellow('🚫 Publishing skipped.'));
     }
 })();
+
+function checkVersionChanged() {
+    return packages.some(pkg => {
+        const pkgJsonPath = path.join(__dirname, '..', 'packages', pkg, 'package.json');
+        if (!fs.existsSync(pkgJsonPath)) {
+            console.warn(chalk.red(`Package.json missing for ${pkg}, skipping version check.`));
+            return false;
+        }
+        const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+        return pkgJson.version !== version;
+    });
+}
+
+function hasGitChanges() {
+    const status = execSync('git status --porcelain').toString().trim();
+    return status.length > 0;
+}
+
+function commitChanges(versionChanged) {
+    console.log(chalk.cyan(`📦 Committing ${versionChanged ? 'version bump and build output' : 'build output or other changes'}...`));
+    execSync('git add .', { stdio: 'inherit' });
+
+    try {
+        execSync(`git commit -m "${versionChanged ? `v${version}` : 'build or other changes'}"`, { stdio: 'inherit' });
+    } catch (err) {
+        console.log(chalk.yellow('⚠️ No changes to commit.'));
+    }
+}
 
 async function askStep(question, fn) {
     const answer = await ask(question + ' (y/n) ');
@@ -72,9 +122,7 @@ async function buildAssets() {
 }
 
 function commitAndTagVersion() {
-    console.log(chalk.cyan('📦 Committing version bump...'));
-    execSync('git add .', { stdio: 'inherit' });
-    execSync(`git commit -m "v${version}"`, { stdio: 'inherit' });
+    console.log(chalk.cyan('🏷️ Tagging version...'));
     execSync(`git tag v${version}`, { stdio: 'inherit' });
     console.log(chalk.green(`✅ Tagged as v${version}`));
 }
