@@ -87,7 +87,6 @@ function bundleFile(packageName, file) {
 function build(options) {
     options.define = options.define || {};
 
-    options.define['ALPINE_VERSION'] = `'${getFromPackageDotJson('alpinejs', 'version')}'`;
     options.define['process.env.NODE_ENV'] = process.argv.includes('--watch') ? `'development'` : `'production'`;
 
     return esbuild.build({

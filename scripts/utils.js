@@ -1,21 +1,35 @@
-const fs = require('fs');
-const path = require('path');
+let DotJson = require('dot-json');
+let { exec } = require('child_process')
 
-function writeToPackageDotJson(packageName, key, value) {
-    const pkgPath = path.resolve(`packages/${packageName}/package.json`);
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    pkg[key] = value;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-    console.log(`📦 Updated ${key} in ${packageName} → ${value}`);
+module.exports.runFromPackage = function (package, command) {
+    exec(command, { cwd: __dirname+'/../packages/'+package })
 }
 
-function getFromPackageDotJson(packageName, key) {
-    const pkgPath = require.resolve(`${packageName}/package.json`, { paths: [process.cwd()] });
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    return pkg[key];
+module.exports.run = function (command) {
+    exec(command, { cwd: __dirname+'/..' })
 }
 
-module.exports = {
-    writeToPackageDotJson,
-    getFromPackageDotJson
+module.exports.writeToPackageDotJson = function (package, key, value) {
+    let dotJson = new DotJson(`./packages/${package}/package.json`)
+
+    dotJson.set(key, value).save()
+}
+
+module.exports.getFromPackageDotJson = function (package, key) {
+    let dotJson = new DotJson(`./packages/${package}/package.json`)
+
+    return dotJson.get(key)
+}
+
+module.exports.ask = async function (message, callback) {
+    let readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    })
+
+    readline.question(message, answer => {
+        if (['y', 'Y', 'yes', 'Yes', 'YES'].includes(answer)) callback()
+
+        readline.close()
+    })
 }

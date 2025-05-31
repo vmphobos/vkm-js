@@ -17,12 +17,11 @@
     "alpinejs": "^3.0.0"
   },
   "keywords": [
+    "Dropdown",
     "x-dom",
     "Alpine",
     "Alpine JS",
     "Plugin",
-    "Close",
-    "Closeable",
     "Javascript"
   ]
 }

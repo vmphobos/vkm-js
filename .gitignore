@@ -1,0 +1,10 @@
+scripts/.env.json
+# Root level node_modules (if any)
+node_modules/
+
+# Ignore dist folders in every package
+**/dist/
+
+# Optional: ignore logs and env files
+*.log
+.env

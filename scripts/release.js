@@ -1,70 +1,94 @@
-#!/usr/bin/env node
+let { runFromPackage, writeToPackageDotJson, ask, run } = require('./utils');
+let chalk = require('chalk');
+let { execSync } = require('child_process');
+let fs = require('fs');
+let axios = require('axios').create({
+    headers: { Authorization: `Bearer ${require('./.env.json').GITHUB_TOKEN}` }
+});
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+let version = process.argv[2];
+if (!version) return exitWith('❌ You must pass a version number: npm run release 1.0.0');
+if (!/^\d+\.\d+\.\d+$/.test(version)) return exitWith(`❌ Invalid version: ${version}`);
 
-// ---- 1. Determine release type ----
-const releaseType = process.argv[2]
-if (!['patch', 'minor', 'major'].includes(releaseType)) {
-    console.error('❌ Usage: node scripts/release.js [patch|minor|major]');
-    process.exit(1);
+let packages = [
+    'closeable',
+    'dropdown',
+    // Add more packages here
+];
+
+let repo = {
+    owner: 'vmphobos',
+    name: 'x-dom',
+    branch: 'main'
+};
+
+bumpVersions();
+buildAssets();
+commitAndTagVersion();
+pushToGitHub();
+
+setTimeout(() => {
+    ask('Ready to publish this version? (y/n) ', () => {
+        createGitHubRelease(version, () => {
+            publishToNpm();
+        });
+    });
+}, 1000);
+
+function bumpVersions() {
+    packages.forEach(pkg => {
+        writeToPackageDotJson(pkg, 'version', version);
+        console.log(chalk.green(`🔢 Bumped version in ${pkg} to ${version}`));
+    });
 }
 
-// ---- 2. Version helpers ----
-function bumpVersion(version, type) {
-    let [major, minor, patch] = version.split('.').map(Number);
-
-    if (type === 'patch') patch++
-    if (type === 'minor') { minor++; patch = 0 }
-    if (type === 'major') { major++; minor = 0; patch = 0 }
-
-    return `${major}.${minor}.${patch}`;
+function buildAssets() {
+    console.log(chalk.blue('🔨 Building assets...'));
+    require('./build');
 }
 
-// ---- 3. Read root version ----
-const rootPath = path.resolve('./package.json');
-const rootPkg = JSON.parse(fs.readFileSync(rootPath, 'utf8'));
-const newVersion = bumpVersion(rootPkg.version, releaseType);
-
-// ---- 4. Update version in root and all packages ----
-rootPkg.version = newVersion;
-fs.writeFileSync(rootPath, JSON.stringify(rootPkg, null, 2));
-console.log(`📦 Updated root version to ${newVersion}`);
-
-const packagesDir = path.resolve('./packages');
-const packages = fs.readdirSync(packagesDir).filter(name =>
-    fs.existsSync(path.join(packagesDir, name, 'package.json'))
-);
-
-packages.forEach(name => {
-    const pkgPath = path.join(packagesDir, name, 'package.json');
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    pkg.version = newVersion;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-    console.log(`📦 Updated ${pkg.name} to ${newVersion}`);
-})
-
-// ---- 5. Commit and tag ----
-try {
+function commitAndTagVersion() {
+    console.log(chalk.cyan('📦 Committing version bump...'));
     execSync('git add .', { stdio: 'inherit' });
-    execSync(`git commit -m "release: v${newVersion}"`, { stdio: 'inherit' });
-    execSync(`git tag v${newVersion}`, { stdio: 'inherit' });
-    console.log(`🏷️  Tagged v${newVersion}`);
-} catch (e) {
-    console.error('❌ Git commit/tag failed');
-    process.exit(1);
+    execSync(`git commit -m "v${version}"`, { stdio: 'inherit' });
+    execSync(`git tag v${version}`, { stdio: 'inherit' });
+    console.log(chalk.green(`✅ Tagged as v${version}`));
 }
 
-// ---- 6. Optional: Publish packages (uncomment to activate) ----
-// packages.forEach(name => {
-//   const pkgPath = path.join(packagesDir, name)
-//   try {
-//     execSync(`cd ${pkgPath} && npm publish --access public`, { stdio: 'inherit' })
-//     console.log(`📤 Published ${name}`)
-//   } catch (err) {
-//     console.error(`❌ Failed to publish ${name}`, err.message)
-//   }
-// })
+function pushToGitHub() {
+    console.log(chalk.yellow('📤 Pushing to GitHub...'));
+    execSync(`git push origin ${repo.branch} --tags`, { stdio: 'inherit' });
+}
 
-console.log(`🎉 Release v${newVersion} complete`);
+function publishToNpm() {
+    packages.forEach(pkg => {
+        console.log(chalk.yellow(`🚀 Publishing @xdom/${pkg}...`));
+        runFromPackage(pkg, 'npm publish --access public');
+    });
+    console.log(chalk.green('🎉 All packages published to npm!'));
+}
+
+function createGitHubRelease(tag, callback) {
+    const releaseBody = `🎉 Release v${tag}\n\n- Changes: Add meaningful changelog here if needed.`;
+
+    axios.post(`https://api.github.com/repos/${repo.owner}/${repo.name}/releases`, {
+        tag_name: `v${tag}`,
+        name: `v${tag}`,
+        target_commitish: repo.branch,
+        body: releaseBody,
+        draft: false,
+        prerelease: false,
+    })
+        .then(() => {
+            console.log(chalk.green(`✅ GitHub release created: v${tag}`));
+            callback();
+        })
+        .catch(err => {
+            console.error(chalk.red('❌ Failed to create GitHub release:'), err.message);
+        });
+}
+
+function exitWith(msg) {
+    console.error(chalk.red(msg));
+    process.exit(1);
+}
