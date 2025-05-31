@@ -9,7 +9,7 @@ let axios = require('axios').create({
 
 let version = process.argv[2];
 if (!version) return exitWith('❌ You must pass a version number: npm run release 1.0.0');
-if (!/^\d+\.\d+\.\d+$/.test(version)) return exitWith(`❌ Invalid version: ${version}`);
+// if (!/^\d+\.\d+\.\d+$/.test(version)) return exitWith(`❌ Invalid version: ${version}`);
 
 let packages = [
     'closeable',
