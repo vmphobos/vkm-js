@@ -19,7 +19,7 @@ let packages = [
 
 let repo = {
     owner: 'vmphobos',
-    name: 'x-dom',
+    name: 'vkm-js',
     branch: 'main'
 };
 
