@@ -1,0 +1,28 @@
+{
+  "name": "@x-dom/closeable",
+  "version": "1.0.0",
+  "description": "An Alpinejs plugin that adds a closeable directive to close or fade the element.",
+  "homepage": "https://github.com/vmphobos",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vmphobos/alpinejs-plugins.git"
+  },
+  "author": "Vasilis Milopoulos",
+  "license": "MIT",
+  "main": "dist/module.cjs.js",
+  "module": "dist/module.esm.js",
+  "unpkg": "dist/cdn.min.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "alpinejs": "^3.0.0"
+  },
+  "keywords": [
+    "x-dom",
+    "Alpine",
+    "Alpine JS",
+    "Plugin",
+    "Close",
+    "Closeable",
+    "Javascript"
+  ]
+}

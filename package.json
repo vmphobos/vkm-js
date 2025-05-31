@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "name": "xdom",
+    "version": "1.0.0",
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "node ./scripts/build.js",
+        "watch": "node ./scripts/build.js --watch",
+        "test": "echo \"Add your tests here\" && exit 0"
+    },
+    "devDependencies": {
+        "esbuild": "^0.16.17"
+    }
+}

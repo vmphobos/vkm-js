@@ -1,0 +1,28 @@
+{
+  "name": "@x-dom/dropdown",
+  "version": "1.0.0",
+  "description": "An Alpinejs plugin that creates a beautiful and customizable dropdown.",
+  "homepage": "https://github.com/vmphobos",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vmphobos/x-dom.git"
+  },
+  "author": "Vasilis Milopoulos",
+  "license": "MIT",
+  "main": "dist/module.cjs.js",
+  "module": "dist/module.esm.js",
+  "unpkg": "build/cdn.min.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "alpinejs": "^3.0.0"
+  },
+  "keywords": [
+    "x-dom",
+    "Alpine",
+    "Alpine JS",
+    "Plugin",
+    "Close",
+    "Closeable",
+    "Javascript"
+  ]
+}
