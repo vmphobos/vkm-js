@@ -25,11 +25,10 @@ module.exports.ask = async function (message, callback) {
     let readline = require('readline').createInterface({
         input: process.stdin,
         output: process.stdout,
-    })
+    });
 
     readline.question(message, answer => {
-        if (['y', 'Y', 'yes', 'Yes', 'YES'].includes(answer)) callback()
-
-        readline.close()
-    })
-}
+        readline.close();
+        callback(answer);
+    });
+};

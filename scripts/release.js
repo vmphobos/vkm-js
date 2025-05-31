@@ -13,6 +13,7 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) return exitWith(`❌ Invalid version: ${ve
 let packages = [
     'closeable',
     'dropdown',
+    'popover',
     // Add more packages here
 ];
 
@@ -22,18 +23,37 @@ let repo = {
     branch: 'main'
 };
 
-bumpVersions();
-buildAssets();
-commitAndTagVersion();
-pushToGitHub();
+(async () => {
+    await askStep('Bump versions?', bumpVersions);
+    await askStep('Build assets?', buildAssets);
+    await askStep('Commit and tag version?', commitAndTagVersion);
+    await askStep('Push to GitHub?', pushToGitHub);
 
-setTimeout(() => {
-    ask('Ready to publish this version? (y/n) ', () => {
-        createGitHubRelease(version, () => {
-            publishToNpm();
+    await new Promise(resolve => {
+        ask('Ready to publish this version? (y/n) ', async answer => {
+            if (answer.toLowerCase() === 'y') {
+                await askStep('Create GitHub release?', cb => createGitHubRelease(version, cb));
+                await askStep('Publish to npm?', publishToNpm);
+            } else {
+                console.log(chalk.yellow('🚫 Publishing skipped.'));
+            }
+            resolve();
         });
     });
-}, 1000);
+})();
+
+function askStep(question, fn) {
+    return new Promise(resolve => {
+        ask(question + ' (y/n) ', answer => {
+            if (answer.toLowerCase() === 'y') {
+                Promise.resolve(fn()).then(resolve);
+            } else {
+                console.log(chalk.yellow(`Skipped: ${question}`));
+                resolve();
+            }
+        });
+    });
+}
 
 function bumpVersions() {
     packages.forEach(pkg => {
@@ -85,6 +105,7 @@ function createGitHubRelease(tag, callback) {
         })
         .catch(err => {
             console.error(chalk.red('❌ Failed to create GitHub release:'), err.message);
+            callback();
         });
 }
 

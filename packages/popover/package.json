@@ -1,7 +1,7 @@
 {
-  "name": "@x-dom/dropdown",
+  "name": "@x-dom/popover",
   "version": "1.0.1",
-  "description": "An Alpinejs plugin that creates a beautiful and customizable dropdown.",
+  "description": "An Alpinejs plugin to add a popover on any element.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
     "alpinejs": "^3.0.0"
   },
   "keywords": [
-    "Dropdown",
+    "Popover",
     "x-dom",
     "Alpine",
     "Alpine JS",
