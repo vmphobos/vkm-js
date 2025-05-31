@@ -1,4 +1,4 @@
-const { writeToPackageDotJson, getFromPackageDotJson } = require('./utils');
+const { writeToPackageDotJson } = require('./utils');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -9,76 +9,74 @@ const packages = fs.readdirSync('./packages').filter((dir) =>
     fs.existsSync(`./packages/${dir}/builds`)
 );
 
-packages.forEach((pkg) => {
-    const distPath = `./packages/${pkg}/dist`
-    if (!fs.existsSync(distPath)) {
-        fs.mkdirSync(distPath, 0o744);
+async function buildAll() {
+    for (const pkg of packages) {
+        const distPath = `./packages/${pkg}/dist`;
+        if (!fs.existsSync(distPath)) {
+            fs.mkdirSync(distPath, 0o744);
+        }
+
+        const files = fs.readdirSync(`./packages/${pkg}/builds`);
+        for (const file of files) {
+            await bundleFile(pkg, file);
+        }
     }
+}
 
-    // Build all files inside ./builds (like cdn.js, module.js)
-    fs.readdirSync(`./packages/${pkg}/builds`).forEach((file) => {
-        bundleFile(pkg, file);
-    })
-});
-
-function bundleFile(packageName, file) {
+async function bundleFile(packageName, file) {
     const inputPath = `packages/${packageName}/builds/${file}`;
     const distPath = `packages/${packageName}/dist`;
 
     const buildTypes = {
-        'cdn.js': () => {
+        'cdn.js': async () => {
             // Non-minified version
-            build({
+            await build({
                 entryPoints: [inputPath],
                 outfile: `${distPath}/${file}`,
                 bundle: true,
                 platform: 'browser',
-                define: {
-                    CDN: 'true',
-                },
-            })
+                define: { CDN: 'true' },
+            });
 
             // Minified version
-            build({
+            await build({
                 entryPoints: [inputPath],
                 outfile: `${distPath}/${file.replace('.js', '.min.js')}`,
                 bundle: true,
                 minify: true,
                 platform: 'browser',
-                define: {
-                    CDN: 'true',
-                },
-            }).then(() => {
-                outputSize(packageName, `${distPath}/${file.replace('.js', '.min.js')}`)
-            })
+                define: { CDN: 'true' },
+            });
+
+            outputSize(packageName, `${distPath}/${file.replace('.js', '.min.js')}`);
         },
 
-        'module.js': () => {
+        'module.js': async () => {
             // ESM
-            build({
+            await build({
                 entryPoints: [inputPath],
                 outfile: `${distPath}/${file.replace('.js', '.esm.js')}`,
                 bundle: true,
                 platform: 'neutral',
                 mainFields: ['module', 'main'],
-            })
+            });
 
             // CommonJS
-            build({
+            await build({
                 entryPoints: [inputPath],
                 outfile: `${distPath}/${file.replace('.js', '.cjs.js')}`,
                 bundle: true,
                 target: ['node10.4'],
                 platform: 'node',
-            }).then(() => {
-                writeToPackageDotJson(packageName, 'main', `dist/${file.replace('.js', '.cjs.js')}`)
-                writeToPackageDotJson(packageName, 'module', `dist/${file.replace('.js', '.esm.js')}`)
-            })
+            });
+
+            writeToPackageDotJson(packageName, 'main', `dist/${file.replace('.js', '.cjs.js')}`);
+            writeToPackageDotJson(packageName, 'module', `dist/${file.replace('.js', '.esm.js')}`);
         },
-    }
+    };
 
     if (buildTypes[file]) {
-        buildTypes[file]();
+        await buildTypes[file]();
     } else {
         console.warn(`⚠️ Unknown build file type: ${file} (skipped)`);
     }
@@ -86,14 +84,16 @@ function bundleFile(packageName, file) {
 
 function build(options) {
     options.define = options.define || {};
-
     options.define['process.env.NODE_ENV'] = process.argv.includes('--watch') ? `'development'` : `'production'`;
 
     return esbuild.build({
         logLevel: process.argv.includes('--watch') ? 'info' : 'silent',
         watch: process.argv.includes('--watch'),
         ...options,
-    }).catch(() => process.exit(1));
+    }).catch((err) => {
+        console.error('Build failed:', err);
+        process.exit(1);
+    });
 }
 
 function outputSize(packageName, file) {
@@ -108,3 +108,6 @@ function bytesToSize(bytes) {
     if (i === 0) return `${bytes} ${sizes[i]}`;
     return `${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`;
 }
+
+// Export the main async build function
+module.exports = buildAll;
