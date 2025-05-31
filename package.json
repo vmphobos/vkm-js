@@ -1,6 +1,7 @@
 {
     "private": true,
     "name": "xdom",
+    "license": "MIT",
     "version": "1.0.0",
     "workspaces": [
         "packages/*"
