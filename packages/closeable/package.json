@@ -1,6 +1,6 @@
 {
-  "name": "@x-dom/closeable",
-  "version": "1.0.1",
+  "name": "@vkm-js/closeable",
+  "version": "1.0.2",
   "description": "An Alpinejs plugin that adds a closeable directive to close or fade the element.",
   "homepage": "https://github.com/vmphobos",
   "repository": {

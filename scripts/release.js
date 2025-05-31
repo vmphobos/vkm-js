@@ -13,6 +13,7 @@ let packages = [
     'closeable',
     'dropdown',
     'popover',
+    'modal',
     // Add more packages here
 ];
 
@@ -84,7 +85,7 @@ function pushToGitHub() {
 
 async function publishToNpm() {
     for (const pkg of packages) {
-        console.log(chalk.yellow(`🚀 Publishing @xdom/${pkg}...`));
+        console.log(chalk.yellow(`🚀 Publishing @vkm-js/${pkg}...`));
         await new Promise((resolve, reject) => {
             runFromPackage(pkg, 'npm publish --access public');
             // runFromPackage uses exec, which is async but does not provide a Promise

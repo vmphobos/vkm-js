@@ -1,0 +1,177 @@
+modal {
+    @apply m-0 p-0;
+}
+
+.modal {
+    @apply
+    fixed
+    top-1/2
+    left-1/2
+    w-1/2
+    h-auto
+    z-1000
+    invisible
+    -translate-x-1/2
+    -translate-y-1/2;
+}
+
+.modal-header,
+.modal-footer {
+    @apply text-black dark:text-white;
+}
+
+.modal-header {
+    @apply flex gap-2 items-center justify-between p-4 font-bold w-full text-lg rounded-t border-b border-b-light dark:border-b-dark-500;
+}
+
+.modal-body:not(.modal-fullscreen) {
+    @apply px-4 py-2 w-full max-h-[calc(100vh_-_10rem)] text-black dark:text-white;
+}
+
+.modal-footer {
+    @apply p-4 w-full rounded-b bg-light-200 dark:bg-black/10;
+}
+
+.modal-top {
+    @apply top-0 translate-y-0;
+}
+
+.modal-bottom {
+    @apply top-auto bottom-0 translate-y-0;
+}
+
+/* Fix modal on small screens */
+.modal-sm,
+.modal-md,
+.modal-lg,
+.modal-xl,
+.modal-xxl {
+    @apply w-full max-h-full max-md:px-3 max-md:py-2;
+}
+
+.modal-sm {
+    @apply sm:max-w-[25rem] sm:mx-auto;
+}
+
+.modal-md  {
+    @apply md:max-w-[35rem] md:mx-auto;
+}
+
+.modal-lg  {
+    @apply lg:max-w-[45rem] lg:mx-auto;
+}
+
+.modal-xl  {
+    @apply xl:max-w-[55rem] xl:mx-auto;
+}
+
+.modal-xxl  {
+    @apply w-11/12;
+}
+
+.modal-fullscreen {
+    @apply w-screen h-screen;
+}
+
+.modal-fullscreen.modal-show {
+    @apply overflow-y-auto;
+}
+
+.modal-fullscreen .modal-content {
+    @apply min-h-screen rounded-none m-0;
+}
+
+.modal-content {
+    @apply relative m-4 rounded-lg bg-white dark:bg-dark-800 shadow-xs transition-all duration-300 translate-y-0;
+}
+
+backdrop {
+    @apply
+    fixed
+    inset-0
+    z-999
+    invisible
+    grid
+    h-screen
+    w-screen
+    place-items-center
+    bg-black/30
+    backdrop-blur-xs
+    transition-opacity
+    duration-300
+    opacity-0;
+}
+
+backdrop.show {
+    @apply
+    opacity-100 visible;
+}
+
+.modal-show {
+    @apply visible;
+}
+
+.modal-360-hide, .modal-360 .modal-content {
+    transform: scale(0) rotate(720deg);
+    opacity: 0;
+    transition: all 0.5s;
+}
+
+.modal-360-show, .modal-360.modal-show .modal-content {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+}
+
+.modal-fade-hide, .modal-fade .modal-content {
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.modal-fade-show, .modal-fade.modal-show .modal-content {
+    opacity: 1;
+}
+
+.modal-scale-hide, .modal-scale .modal-content {
+    transform: scale(0.7);
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.modal-scale-show, .modal-scale.modal-show .modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal-slide-in-hide, .modal-slide-in .modal-content {
+    transform: translateX(20%);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.25, 0.5, 0.5, 0.9);
+}
+
+.modal-slide-in-show, .modal-slide-in.modal-show .modal-content {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.modal-slide-bottom-hide, .modal-slide-bottom .modal-content {
+    transform: translateY(20%);
+    opacity: 0;
+    transition: all 0.3s;
+}
+
+.modal-slide-bottom-show, .modal-slide-bottom.modal-show .modal-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.modal-fall-hide, .modal-fall .modal-content {
+    transform-style: preserve-3d;
+    transform: scale3d(2, 2, 1.5);
+    opacity: 0;
+}
+
+.modal-fall-show, .modal-fall.modal-show .modal-content {
+    transition: all 0.3s ease-in;
+    transform: scale3d(1, 1, 1);
+    opacity: 1;
+}

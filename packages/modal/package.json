@@ -1,7 +1,7 @@
 {
-  "name": "@vkm-js/dropdown",
+  "name": "@vkm-js/modal",
   "version": "1.0.2",
-  "description": "An Alpinejs plugin that creates a beautiful and customizable dropdown.",
+  "description": "An Alpinejs modal plugin.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
     "alpinejs": "^3.0.0"
   },
   "keywords": [
-    "Dropdown",
+    "Modal",
     "x-dom",
     "Alpine",
     "Alpine JS",
