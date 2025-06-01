@@ -1,7 +1,7 @@
 export default function (Alpine) {
     Alpine.directive('tooltip', (el, {modifiers, expression}, {cleanup}) => {
         let tooltipId = 'tooltip-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36),
-            tooltipClass = 'z-10 w-max max-w-24 text-sm rounded-md shadow-lg text-light bg-dark/90  -translate-x-1/2  -translate-y-full before:absolute before:opacity-90 before:h-0 before:w-0 before:mt-0 before:flex-none before:border-e-4 before:border-s-4 before:border-t-4 before:border-e-transparent before:border-s-transparent before:border-t-dark dark:text-dark-50 dark:shadow-black/10 dark:bg-dark-700/90 dark:before:border-t-dark-700',
+            tooltipClass = '',
             tooltipContent = expression.replace(/'/g, "\\'").replace(/"/g, '&quot;'),
             tooltipArrow = !modifiers.includes('no-arrow'),
             tooltipPosition = null,
