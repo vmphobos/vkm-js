@@ -28,7 +28,7 @@ export default function (Alpine) {
         let tooltip_color = 'text-light bg-dark/90 before:border-t-dark dark:text-dark-50 dark:shadow-black/10 dark:bg-dark-700/90 dark:before:border-t-dark-700 shadow-lg';
 
         for (let key in colors) {
-            if (modifiers.includes(color)) {
+            if (modifiers.includes(key)) {
                 tooltip_color = colors[key];
                 break;
             }
