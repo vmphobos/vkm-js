@@ -1,12 +1,19 @@
 export default function (Alpine) {
     Alpine.directive('tooltip', (el, {modifiers, expression}, {cleanup}) => {
         let tooltipId = 'tooltip-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36),
-            tooltipClass = '',
+            tooltipClass = 'absolute z-[1000] w-max max-w-[400px] text-sm rounded-md shadow-lg -translate-x-1/2 -translate-y-full before:absolute before:opacity-90 before:h-0 before:w-0 before:mt-0 before:flex-none before:border-e-4 before:border-s-4 before:border-t-4 before:border-e-transparent before:border-s-transparent',
             tooltipContent = expression.replace(/'/g, "\\'").replace(/"/g, '&quot;'),
             tooltipArrow = !modifiers.includes('no-arrow'),
             tooltipPosition = null,
             positions = ['top', 'bottom', 'left', 'right'],
-            colors = ['success', 'danger', 'info', 'warning', 'light', 'dark'],
+            colors = {
+                success: 'bg-emerald-200/90 text-emerald-900 before:border-t-emerald-200',
+                danger: 'bg-red-200/90 text-red-900 before:border-t-red-200',
+                info: 'bg-sky-200/90 text-sky-900 before:border-t-sky-200',
+                warning: 'bg-yellow-200/90 text-yellow-900 before:border-t-yellow-200',
+                light: 'bg-white-200/80 text-black before:border-t-gray-200',
+                dark: 'bg-black/80 text-white before:border-t-black'
+            },
             elementPosition = getComputedStyle(el).position;
 
         for (let position of positions) {
@@ -18,13 +25,17 @@ export default function (Alpine) {
 
         let autoPosition = !tooltipPosition;
 
-        for (let color of colors) {
+        let tooltip_color = 'text-light bg-dark/90 before:border-t-dark dark:text-dark-50 dark:shadow-black/10 dark:bg-dark-700/90 dark:before:border-t-dark-700 shadow-lg';
+
+        for (let key of colors) {
             if (modifiers.includes(color)) {
-                tooltipClass += ` tooltip-${color}`;
+                tooltip_color = colors[key];
                 break;
             }
         }
 
+        tooltipClass += tooltip_color;
+        
         if (!['relative', 'absolute', 'fixed'].includes(elementPosition)) {
             el.style.position = 'relative';
         }
