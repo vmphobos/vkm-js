@@ -1,81 +1,97 @@
 export default function (Alpine) {
     Alpine.directive('tooltip', (el, { expression, modifiers }, { cleanup }) => {
-        let tooltipEl;
-
-        // Defaults
+        const rawTooltipText = el.getAttribute('x-tooltip') || expression || '';
         const position = modifiers.find(m => ['top', 'bottom', 'left', 'right'].includes(m)) || 'top';
-        const color = modifiers.find(m => ['success', 'danger', 'info', 'warning', 'dark', 'light'].includes(m)) || 'dark';
+        const color = modifiers.find(m => Object.keys(colorMap).includes(m)) || 'dark';
 
-        // Tooltip HTML
-        function createTooltip(text) {
-            const wrapper = document.createElement('div');
-            wrapper.setAttribute('x-cloak', '');
-            wrapper.className = `
-                absolute whitespace-nowrap text-sm px-3 py-1 rounded-md shadow-lg z-50
-                ${colorClasses[color] || colorClasses.dark}
-                ${positionClasses[position]}
-            `;
+        let tooltipEl = null;
 
-            const arrow = document.createElement('div');
-            arrow.className = `absolute ${arrowClasses[position]}`;
-
-            wrapper.textContent = text;
-            wrapper.appendChild(arrow);
-            return wrapper;
-        }
-
-        // Show tooltip
         const showTooltip = () => {
             if (tooltipEl) return;
 
-            const rawTooltipText = el.getAttribute('x-tooltip'); // <- use the raw value
+            el.classList.add('relative');
 
-            const tooltipText = (typeof expression === 'string')
-                ? expression
-                : rawTooltipText || '';
-            
-            tooltipEl = createTooltip(tooltipText);
+            tooltipEl = document.createElement('div');
+            tooltipEl.className = `${baseTooltipClass} ${colorMap[color].tooltip} ${positionMap[position].tooltip}`;
+
+            const content = document.createElement('div');
+            content.textContent = rawTooltipText;
+            tooltipEl.appendChild(content);
+
+            const arrow = document.createElement('div');
+            arrow.className = `absolute ${positionMap[position].arrow} ${colorMap[color].arrow}`;
+            tooltipEl.appendChild(arrow);
+
             el.appendChild(tooltipEl);
         };
 
-        // Hide tooltip
         const hideTooltip = () => {
             if (tooltipEl && tooltipEl.parentNode) {
-                tooltipEl.parentNode.removeChild(tooltipEl);
+                tooltipEl.remove();
                 tooltipEl = null;
             }
         };
 
-        el.classList.add('relative'); // Ensure relative positioning
         el.addEventListener('mouseenter', showTooltip);
         el.addEventListener('mouseleave', hideTooltip);
 
         cleanup(() => {
             el.removeEventListener('mouseenter', showTooltip);
             el.removeEventListener('mouseleave', hideTooltip);
+            hideTooltip();
         });
     });
 }
 
-const colorClasses = {
-    success: 'bg-green-200 text-green-900',
-    danger: 'bg-red-200 text-red-900',
-    info: 'bg-blue-200 text-blue-900',
-    warning: 'bg-yellow-200 text-yellow-900',
-    light: 'bg-white text-black',
-    dark: 'bg-black text-white'
+// Base styles
+const baseTooltipClass = `
+    absolute z-50 px-3 py-1 text-sm rounded shadow-lg transition-opacity duration-150 whitespace-nowrap
+`;
+
+// Color classes
+const colorMap = {
+    dark: {
+        tooltip: 'bg-black text-white',
+        arrow: 'border-t-black'
+    },
+    light: {
+        tooltip: 'bg-white text-black',
+        arrow: 'border-t-white'
+    },
+    info: {
+        tooltip: 'bg-blue-200 text-blue-900',
+        arrow: 'border-t-blue-200'
+    },
+    success: {
+        tooltip: 'bg-green-200 text-green-900',
+        arrow: 'border-t-green-200'
+    },
+    danger: {
+        tooltip: 'bg-red-200 text-red-900',
+        arrow: 'border-t-red-200'
+    },
+    warning: {
+        tooltip: 'bg-yellow-200 text-yellow-900',
+        arrow: 'border-t-yellow-200'
+    }
 };
 
-const positionClasses = {
-    top: '-top-2 left-1/2 -translate-x-1/2 -translate-y-full',
-    bottom: 'top-full mt-2 left-1/2 -translate-x-1/2',
-    left: 'left-0 -translate-x-full top-1/2 -translate-y-1/2',
-    right: 'left-full ml-2 top-1/2 -translate-y-1/2'
-};
-
-const arrowClasses = {
-    top: 'bottom-0 left-1/2 -translate-x-1/2 border-x-8 border-x-transparent border-t-8 border-t-inherit',
-    bottom: '-top-2 left-1/2 -translate-x-1/2 border-x-8 border-x-transparent border-b-8 border-b-inherit',
-    left: 'right-0 top-1/2 -translate-y-1/2 border-y-8 border-y-transparent border-l-8 border-l-inherit',
-    right: 'left-0 top-1/2 -translate-y-1/2 border-y-8 border-y-transparent border-r-8 border-r-inherit'
+// Position and arrow placement
+const positionMap = {
+    top: {
+        tooltip: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
+        arrow: 'top-full left-1/2 -translate-x-1/2 border-x-8 border-x-transparent border-t-8'
+    },
+    bottom: {
+        tooltip: 'top-full left-1/2 -translate-x-1/2 mt-2',
+        arrow: 'bottom-full left-1/2 -translate-x-1/2 border-x-8 border-x-transparent border-b-8'
+    },
+    left: {
+        tooltip: 'right-full top-1/2 -translate-y-1/2 mr-2',
+        arrow: 'left-full top-1/2 -translate-y-1/2 border-y-8 border-y-transparent border-l-8'
+    },
+    right: {
+        tooltip: 'left-full top-1/2 -translate-y-1/2 ml-2',
+        arrow: 'right-full top-1/2 -translate-y-1/2 border-y-8 border-y-transparent border-r-8'
+    }
 };
