@@ -22,7 +22,7 @@ export default function (Alpine) {
             },
             elementPosition = getComputedStyle(el).position;
 
-        for (let position of positions) {
+        for (let position in positions) {
             if (modifiers.includes(position)) {
                 tooltipPosition = position;
                 break;
