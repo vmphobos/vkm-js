@@ -5,7 +5,13 @@ export default function (Alpine) {
             tooltipContent = expression.replace(/'/g, "\\'").replace(/"/g, '&quot;'),
             tooltipArrow = !modifiers.includes('no-arrow'),
             tooltipPosition = null,
-            positions = ['top', 'bottom', 'left', 'right'],
+            positions = {
+                top: '-mt-2 -translate-x-1/2 -translate-y-full before:bottom-0 before:-translate-x-1/2 before:left-1/2 before:w-2.5 before:translate-y-full',
+                bottom: 'mt-2 -translate-x-1/2 translate-y-0 before:top-0 before:-translate-x-1/2 before:left-1/2 before:w-2.5 before:-translate-y-full before:rotate-180',
+                left: '-ml-2 -translate-y-1/2 -translate-x-full before:right-0 before:-translate-y-1/2 before:top-1/2 before:h-2.5 before:-mt-px before:translate-x-full before:rotate-270',
+                right: '-mr-2 -translate-y-1/2 translate-x-full before:left-0 before:-translate-y-1/2 before:top-1/2 before:h-2.5 before:-mt-px before:-translate-x-full before:rotate-90',
+
+            },
             colors = {
                 success: 'bg-emerald-200/90 text-emerald-900 before:border-t-emerald-200',
                 danger: 'bg-red-200/90 text-red-900 before:border-t-red-200',
