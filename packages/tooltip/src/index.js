@@ -51,27 +51,27 @@ const baseTooltipClass = `
 // Color classes
 const colorMap = {
     dark: {
-        tooltip: 'bg-black text-white',
+        tooltip: 'bg-black/90 text-white',
         arrow: 'border-t-black'
     },
     light: {
-        tooltip: 'bg-white text-black',
+        tooltip: 'bg-white/90 text-black',
         arrow: 'border-t-white'
     },
     info: {
-        tooltip: 'bg-blue-200 text-blue-900',
+        tooltip: 'bg-blue-200/90 text-blue-900',
         arrow: 'border-t-blue-200'
     },
     success: {
-        tooltip: 'bg-green-200 text-green-900',
+        tooltip: 'bg-emerald-200/90 text-emerald-900',
         arrow: 'border-t-green-200'
     },
     danger: {
-        tooltip: 'bg-red-200 text-red-900',
+        tooltip: 'bg-red-200/90 text-red-900',
         arrow: 'border-t-red-200'
     },
     warning: {
-        tooltip: 'bg-yellow-200 text-yellow-900',
+        tooltip: 'bg-yellow-200/90 text-yellow-900',
         arrow: 'border-t-yellow-200'
     }
 };
