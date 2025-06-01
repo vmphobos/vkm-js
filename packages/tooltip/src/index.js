@@ -28,7 +28,12 @@ export default function (Alpine) {
         const showTooltip = () => {
             if (tooltipEl) return;
 
-            const tooltipText = Alpine.evaluate(el, expression);
+            const rawTooltipText = el.getAttribute('x-tooltip'); // <- use the raw value
+
+            const tooltipText = (typeof expression === 'string')
+                ? expression
+                : rawTooltipText || '';
+            
             tooltipEl = createTooltip(tooltipText);
             el.appendChild(tooltipEl);
         };
