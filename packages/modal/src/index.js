@@ -24,8 +24,9 @@ export default function (Alpine) {
             backdropEl = document.createElement('backdrop');
             el.insertBefore(backdropEl, modalEl);
         }
-        if (!show) {
-            backdropEl.classList.add('hidden');
+
+        if (show) {
+            backdropEl.classList.add('show');
         }
 
         return { triggerEl, modalEl, closeEl, backdropEl, transition, size, position, show, overflow, noCloseOnBackdrop };

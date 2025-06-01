@@ -1,7 +1,7 @@
 {
-  "name": "@vkm-js/popover",
-  "version": "1.0.1-alpha",
-  "description": "An Alpinejs plugin to add a popover on any element.",
+  "name": "@vkm-js/tooltip",
+  "version": "1.0.0-alpha",
+  "description": "An Alpinejs tooltip.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
     "type": "git",
@@ -17,11 +17,11 @@
     "alpinejs": "^3.0.0"
   },
   "keywords": [
-    "Popover",
-    "vkm-js",
+    "Tooltip",
     "Alpine",
     "Alpine JS",
     "Plugin",
-    "Javascript"
+    "Javascript",
+    "vkm-js"
   ]
 }

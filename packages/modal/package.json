@@ -1,6 +1,6 @@
 {
   "name": "@vkm-js/modal",
-  "version": "1.0.0-alpha",
+  "version": "1.0.1-alpha",
   "description": "An Alpinejs modal plugin.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
@@ -18,7 +18,7 @@
   },
   "keywords": [
     "Modal",
-    "x-dom",
+    "vkm-js",
     "Alpine",
     "Alpine JS",
     "Plugin",
