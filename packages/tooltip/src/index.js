@@ -1,119 +1,76 @@
 export default function (Alpine) {
-    Alpine.directive('tooltip', (el, {modifiers, expression}, {cleanup}) => {
-        let tooltipId = 'tooltip-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36),
-            tooltipClass = 'absolute z-[1000] w-max max-w-[400px] text-sm rounded-md shadow-lg -translate-x-1/2 -translate-y-full before:absolute before:opacity-90 before:h-0 before:w-0 before:mt-0 before:flex-none before:border-e-4 before:border-s-4 before:border-t-4 before:border-e-transparent before:border-s-transparent',
-            tooltipContent = expression.replace(/'/g, "\\'").replace(/"/g, '&quot;'),
-            tooltipArrow = !modifiers.includes('no-arrow'),
-            tooltipPosition = null,
-            positions = {
-                top: '-mt-2 -translate-x-1/2 -translate-y-full before:bottom-0 before:-translate-x-1/2 before:left-1/2 before:w-2.5 before:translate-y-full',
-                bottom: 'mt-2 -translate-x-1/2 translate-y-0 before:top-0 before:-translate-x-1/2 before:left-1/2 before:w-2.5 before:-translate-y-full before:rotate-180',
-                left: '-ml-2 -translate-y-1/2 -translate-x-full before:right-0 before:-translate-y-1/2 before:top-1/2 before:h-2.5 before:-mt-px before:translate-x-full before:rotate-270',
-                right: '-mr-2 -translate-y-1/2 translate-x-full before:left-0 before:-translate-y-1/2 before:top-1/2 before:h-2.5 before:-mt-px before:-translate-x-full before:rotate-90',
+    Alpine.directive('tooltip', (el, { expression, modifiers }, { cleanup }) => {
+        let tooltipEl;
 
-            },
-            colors = {
-                success: 'bg-emerald-200/90 text-emerald-900 before:border-t-emerald-200',
-                danger: 'bg-red-200/90 text-red-900 before:border-t-red-200',
-                info: 'bg-sky-200/90 text-sky-900 before:border-t-sky-200',
-                warning: 'bg-yellow-200/90 text-yellow-900 before:border-t-yellow-200',
-                light: 'bg-white-200/80 text-black before:border-t-gray-200',
-                dark: 'bg-black/80 text-white before:border-t-black'
-            },
-            elementPosition = getComputedStyle(el).position;
+        // Defaults
+        const position = modifiers.find(m => ['top', 'bottom', 'left', 'right'].includes(m)) || 'top';
+        const color = modifiers.find(m => ['success', 'danger', 'info', 'warning', 'dark', 'light'].includes(m)) || 'dark';
 
-        for (let position in positions) {
-            if (modifiers.includes(position)) {
-                tooltipPosition = position;
-                break;
-            }
+        // Tooltip HTML
+        function createTooltip(text) {
+            const wrapper = document.createElement('div');
+            wrapper.setAttribute('x-cloak', '');
+            wrapper.className = `
+                absolute whitespace-nowrap text-sm px-3 py-1 rounded-md shadow-lg z-50
+                ${colorClasses[color] || colorClasses.dark}
+                ${positionClasses[position]}
+            `;
+
+            const arrow = document.createElement('div');
+            arrow.className = `absolute ${arrowClasses[position]}`;
+
+            wrapper.textContent = text;
+            wrapper.appendChild(arrow);
+            return wrapper;
         }
 
-        let autoPosition = !tooltipPosition;
+        // Show tooltip
+        const showTooltip = () => {
+            if (tooltipEl) return;
 
-        let tooltip_color = 'text-light bg-dark/90 before:border-t-dark dark:text-dark-50 dark:shadow-black/10 dark:bg-dark-700/90 dark:before:border-t-dark-700 shadow-lg';
-
-        for (let key in colors) {
-            if (modifiers.includes(key)) {
-                tooltip_color = colors[key];
-                break;
-            }
-        }
-
-        tooltipClass += tooltip_color;
-
-        if (!['relative', 'absolute', 'fixed'].includes(elementPosition)) {
-            el.style.position = 'relative';
-        }
-
-        if(!el.dataset.tooltip) {
-            el.dataset.tooltip = tooltipId;
-        }
-
-        let showTooltip = function (event) {
-            tooltipId = el.dataset.tooltip;
-            let tooltip_div = document.getElementById(tooltipId);
-            if(!tooltip_div) {
-                let tooltipHTML = `
-                    <div id="${tooltipId}" x-data="{ show: false, tooltipContent: '` + tooltipContent + `', tooltipArrow: ${tooltipArrow}, tooltipPosition: '${tooltipPosition}', removeTooltips: () => document.querySelectorAll('.tooltip').forEach(e => e.remove()) }" x-ref="tooltip" x-init="setTimeout(function(){ show = true; }, 1);" x-show="show" class="${tooltipClass}" x-cloak wire:ignore x-on:click.outside="removeTooltips()">
-                        <div x-show="show" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-10" class="tooltip-content" x-text="tooltipContent">
-                        </div>
-                    </div>
-                `;
-                document.body.insertAdjacentHTML('beforeend', tooltipHTML);
-                tooltip_div = document.getElementById(tooltipId);
-                //add position class
-            }
-
-            let el_position = el.getBoundingClientRect(),
-                body_rect = document.body.getBoundingClientRect();
-
-            if (autoPosition) {
-                //auto position tooltip top or bottom when no position
-                tooltipPosition = (screen.height / 4) > el_position.y ? 'bottom' : 'top';
-
-                if ((el_position.width - el_position.x) < 150 && (body_rect.width - el_position.x) < 150) {
-                    tooltipPosition = 'right';
-                } else if ((body_rect.width - el_position.x) < 150) {
-                    tooltipPosition = 'left';
-                }
-            }
-
-            tooltip_div.classList.add(`tooltip-${tooltipPosition}`);
-
-            let tooltip_top = (window.scrollY + el_position.top);
-            if (tooltipPosition === 'bottom') {
-                tooltip_top = (window.scrollY + el_position.bottom);
-            }
-
-            if (tooltipPosition === 'right' || tooltipPosition === 'left') {
-                tooltip_top += (el_position.height / 2); //middle align tooltip
-
-                //position tooltip according to position modifier
-                tooltip_div.style[tooltipPosition] = (tooltipPosition === 'left' ? (el_position.left) : (body_rect.width - el_position.right)) + 'px';
-            } else {
-                //center tooltip in element
-                tooltip_div.style.left = (window.scrollX + el_position.left + (el_position.width / 2)) + 'px';
-            }
-
-            tooltip_div.style.top = tooltip_top + 'px';
+            const tooltipText = Alpine.evaluate(el, expression);
+            tooltipEl = createTooltip(tooltipText);
+            el.appendChild(tooltipEl);
         };
 
-        let hideTooltip = function (event) {
-            //this will always remove all tooltips
-            document.querySelectorAll('.tooltip').forEach(e => e.remove());
+        // Hide tooltip
+        const hideTooltip = () => {
+            if (tooltipEl && tooltipEl.parentNode) {
+                tooltipEl.parentNode.removeChild(tooltipEl);
+                tooltipEl = null;
+            }
         };
 
-        if(modifiers.includes('show')) {
-            showTooltip();
-        }
-
+        el.classList.add('relative'); // Ensure relative positioning
         el.addEventListener('mouseenter', showTooltip);
         el.addEventListener('mouseleave', hideTooltip);
 
         cleanup(() => {
             el.removeEventListener('mouseenter', showTooltip);
             el.removeEventListener('mouseleave', hideTooltip);
-        })
+        });
     });
 }
+
+const colorClasses = {
+    success: 'bg-green-200 text-green-900',
+    danger: 'bg-red-200 text-red-900',
+    info: 'bg-blue-200 text-blue-900',
+    warning: 'bg-yellow-200 text-yellow-900',
+    light: 'bg-white text-black',
+    dark: 'bg-black text-white'
+};
+
+const positionClasses = {
+    top: '-top-2 left-1/2 -translate-x-1/2 -translate-y-full',
+    bottom: 'top-full mt-2 left-1/2 -translate-x-1/2',
+    left: 'left-0 -translate-x-full top-1/2 -translate-y-1/2',
+    right: 'left-full ml-2 top-1/2 -translate-y-1/2'
+};
+
+const arrowClasses = {
+    top: 'bottom-0 left-1/2 -translate-x-1/2 border-x-8 border-x-transparent border-t-8 border-t-inherit',
+    bottom: '-top-2 left-1/2 -translate-x-1/2 border-x-8 border-x-transparent border-b-8 border-b-inherit',
+    left: 'right-0 top-1/2 -translate-y-1/2 border-y-8 border-y-transparent border-l-8 border-l-inherit',
+    right: 'left-0 top-1/2 -translate-y-1/2 border-y-8 border-y-transparent border-r-8 border-r-inherit'
+};
