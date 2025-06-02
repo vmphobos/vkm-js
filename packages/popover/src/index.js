@@ -105,14 +105,20 @@ export default function (Alpine) {
             'font-sans',
             'font-normal',
             'text-sm',
+            'text-dark',  // default text color
+            'border',
+            'border-light',
             'shadow-lg',
             'shadow-black/20',
             'focus:outline-hidden',
+            'dark:bg-dark-900',
+            'dark:border-dark',
+            'dark:text-light',
             'dark:shadow-black/75',
-            colorClass,
-            transition // Ensure transition class is appended dynamically
-        ].join(' ');
+            transition
+        ];
 
+        // If no colorClass found, use default color classes
         if (colorClass) {
             popoverClass.push(colorClass);
         } else {
@@ -120,8 +126,6 @@ export default function (Alpine) {
         }
 
         popoverEl.classList.add(...popoverClass);
-
-        popoverEl.classList.add(...popoverClass.split(' '));
 
         // Ensure overflowEl exists, or use 'body' as fallback
         let overflowEl = 'clippingAncestors';
