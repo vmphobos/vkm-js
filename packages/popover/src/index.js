@@ -147,7 +147,7 @@ export default function (Alpine) {
     // Function to make and position the arrow
     function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression, colorClass) {
         let arrow_id = `arrow-${id}`;
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade" x-show="open"></span>`);
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 ${colorClass} animate-fade" x-show="open"></span>`);
 
         const arrowEl = document.getElementById(arrow_id);
         if (!arrowEl) return;
