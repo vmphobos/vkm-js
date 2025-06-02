@@ -86,13 +86,13 @@ export default function (Alpine) {
             'text-dark',
             'bg-white',
             'border',
-            'border-light',
+            'border-gray-100',
             'shadow-lg',
             'shadow-black/20',
             'focus:outline-hidden',
-            'dark:bg-dark-900',
-            'dark:border-dark',
-            'dark:text-light',
+            'dark:bg-dark-900/90',
+            'dark:border-black/90',
+            'dark:text-white',
             'dark:shadow-black/75',
             transition // Ensure transition class is appended dynamically
         ].join(' ');
@@ -130,7 +130,7 @@ export default function (Alpine) {
         let arrow_id = `arrow-${id}`;
 
         // Insert arrow into the DOM after the popover is fully rendered
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade hidden"></span>`);
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-gray-100 border-l-gray-100 dark:bg-dark-900/90 dark:border-t-black/90 dark:border-l-dark/90 animate-fade hidden"></span>`);
 
         // Get arrow element
         const arrowEl = document.getElementById(arrow_id);
