@@ -1,21 +1,17 @@
 import { computePosition, arrow, flip, offset, shift, autoUpdate, autoPlacement, detectOverflow } from '@floating-ui/dom';
 
 export default function (Alpine) {
-    // Shared functionality for the popover
+    // Shared functionality for both Tooltip and Popover
     function getPopoverOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             popoverEl = el.querySelector('[data-popover]'),
-            isHoverable = modifiers.includes('hover'),
-            isCustom = modifiers.includes('custom'); // Check if custom modifier is passed
+            isHoverable = modifiers.includes('hover');
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
         let colorClass = getColorClass(modifiers);  // Get color class
 
-        // Get custom classes directly from the element's class attribute
-        let customClasses = el.classList.toString();
-
-        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses, isCustom };
+        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass };
     }
 
     function getPlacement(modifiers) {
@@ -39,6 +35,7 @@ export default function (Alpine) {
             'dark': ['bg-black/90', 'text-white'],
         };
 
+        // Check for the modifier in the array and return the matching color class
         return modifiers.reduce((acc, modifier) => acc || colorMapping[modifier], '');
     }
 
@@ -66,7 +63,7 @@ export default function (Alpine) {
 
     // Popover Directive
     Alpine.directive('popover', (el, { expression, modifiers }, { cleanup }) => {
-        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses, isCustom } = getPopoverOptions(el, modifiers);
+        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass } = getPopoverOptions(el, modifiers);
 
         if (expression) {
             popoverEl.innerHTML = expression; // Can be HTML or text content
@@ -84,30 +81,34 @@ export default function (Alpine) {
         popoverEl.id = 'popover-' + el.id;
         popoverEl.setAttribute('x-show', 'open');
 
-        // Apply custom classes directly if custom modifier exists, otherwise apply default color and transition classes
-        const popoverClass = isCustom
-            ? customClasses.split(' ')  // Use user-defined classes if 'custom' modifier is set
-            : [
-                'z-998',
-                'w-96',
-                'min-w-fit',
-                'max-w-full',
-                'sm:max-w-[320px]',
-                'md:max-w-sm',
-                'lg:max-w-md',
-                'xl:max-w-lg',
-                'rounded-lg',
-                'whitespace-normal',
-                'break-words',
-                'font-normal',
-                'text-sm',
-                'shadow-lg',
-                'shadow-black/20',
-                'focus:outline-hidden',
-                'dark:shadow-black/75',
-                transition,
-                ...(colorClass ? [colorClass] : defaultColorClasses),  // Apply color class if available
-            ];
+        // Default popover classes + dynamic color classes if any
+        const popoverClass = [
+            'z-998',
+            'w-96',
+            'min-w-fit',
+            'max-w-full',
+            'sm:max-w-[320px]',
+            'md:max-w-sm',
+            'lg:max-w-md',
+            'xl:max-w-lg',
+            'rounded-lg',
+            'whitespace-normal',
+            'break-words',
+            'font-normal',
+            'text-sm',
+            'shadow-lg',
+            'shadow-black/20',
+            'focus:outline-hidden',
+            'dark:shadow-black/75',
+            transition
+        ];
+
+        // If no colorClass found, use default color classes
+        if (colorClass) {
+            popoverClass.push(colorClass);
+        } else {
+            popoverClass.push(...defaultColorClasses); // Apply default classes if no color modifier is passed
+        }
 
         popoverEl.classList.add(...popoverClass);
 
