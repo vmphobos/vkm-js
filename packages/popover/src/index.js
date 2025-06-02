@@ -99,11 +99,13 @@ export default function (Alpine) {
 
         popoverEl.classList.add(...popoverClass.split(' '));
 
+        // Ensure overflowEl exists, or use 'body' as fallback
         let overflowEl = 'clippingAncestors';
         if (expression) {
             overflowEl = document.getElementById(expression);
             if (!overflowEl) {
                 console.error('Popover: Make sure the ID passed to x-popover exists in a DOM element.');
+                overflowEl = 'body'; // Fallback to body if element not found
             }
         }
 
