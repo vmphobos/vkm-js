@@ -5,14 +5,17 @@ export default function (Alpine) {
     function getPopoverOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             popoverEl = el.querySelector('[data-popover]'),
-            isHoverable = modifiers.includes('hover');
+            isHoverable = modifiers.includes('hover'),
+            isCustom = modifiers.includes('custom'); // Check if custom modifier is passed
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
         let colorClass = getColorClass(modifiers);  // Get color class
-        let customClasses = popoverEl.getAttribute('data-popover') || ''; // Get custom classes passed in data-popover
 
-        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses };
+        // Get custom classes directly from the element's class attribute
+        let customClasses = el.classList.toString();
+
+        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses, isCustom };
     }
 
     function getPlacement(modifiers) {
@@ -63,7 +66,7 @@ export default function (Alpine) {
 
     // Popover Directive
     Alpine.directive('popover', (el, { expression, modifiers }, { cleanup }) => {
-        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses } = getPopoverOptions(el, modifiers);
+        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses, isCustom } = getPopoverOptions(el, modifiers);
 
         if (expression) {
             popoverEl.innerHTML = expression; // Can be HTML or text content
@@ -81,15 +84,10 @@ export default function (Alpine) {
         popoverEl.id = 'popover-' + el.id;
         popoverEl.setAttribute('x-show', 'open');
 
-        // Start with an empty popover class list, then add custom classes if provided
-        let popoverClass = [];
-
-        // If customClasses exists (from data-popover), replace the default classes
-        if (customClasses) {
-            popoverClass = customClasses.split(' '); // Split the custom classes into an array
-        } else {
-            // Apply default classes if no custom classes are passed
-            popoverClass = [
+        // Apply custom classes directly if custom modifier exists, otherwise apply default color and transition classes
+        const popoverClass = isCustom
+            ? customClasses.split(' ')  // Use user-defined classes if 'custom' modifier is set
+            : [
                 'z-998',
                 'w-96',
                 'min-w-fit',
@@ -107,16 +105,9 @@ export default function (Alpine) {
                 'shadow-black/20',
                 'focus:outline-hidden',
                 'dark:shadow-black/75',
-                transition
+                transition,
+                ...(colorClass ? [colorClass] : defaultColorClasses),  // Apply color class if available
             ];
-        }
-
-        // If no colorClass found, use default color classes
-        if (colorClass) {
-            popoverClass.push(...colorClass);  // Apply the color class to the popover
-        } else {
-            popoverClass.push(...defaultColorClasses); // Apply default color classes if no color modifier is passed
-        }
 
         popoverEl.classList.add(...popoverClass);
 
@@ -148,14 +139,14 @@ export default function (Alpine) {
     // Function to make and position the arrow
     function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression, colorClass) {
         let arrow_id = `arrow-${id}`;
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 animate-fade" x-show="open"></span>`);
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 ${colorClass} animate-fade" x-show="open"></span>`);
 
         const arrowEl = document.getElementById(arrow_id);
         if (!arrowEl) return;
 
         // Apply the same color to the arrow if a color modifier is set
         if (colorClass) {
-            arrowEl.classList.add(...colorClass);  // Apply the color class to the arrow as well
+            arrowEl.classList.add(colorClass);  // Apply the color class to the arrow as well
         } else {
             // Apply default color classes to the arrow
             arrowEl.classList.add(...defaultColorClasses);
