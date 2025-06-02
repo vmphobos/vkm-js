@@ -25,14 +25,14 @@ export default function (Alpine) {
     // Function to get color class from modifiers
     function getColorClass(modifiers) {
         const colorMapping = {
-            'danger': 'bg-red-200/90 text-red-900',
-            'success': 'bg-emerald-200/90 text-emerald-900',
-            'warning': 'bg-yellow-200/90 text-yellow-900',
-            'info': 'bg-sky-200/90 text-sky-900',
-            'primary': 'bg-blue-600',
-            'secondary': 'bg-gray-600',
-            'light': 'bg-gray-300/90 text-black',
-            'dark': 'bg-black/90 text-white',
+            'danger': ['bg-red-200/90', 'text-red-900'],
+            'success': ['bg-emerald-200/90', 'text-emerald-900'],
+            'warning': ['bg-yellow-200/90', 'text-yellow-900'],
+            'info': ['bg-sky-200/90', 'text-sky-900'],
+            'primary': ['bg-blue-600', 'text-blue-900'],
+            'secondary': ['bg-gray-600', 'text-gray-900'],
+            'light': ['bg-gray-300/90', 'text-black'],
+            'dark': ['bg-black/90', 'text-white'],
         };
 
         // Check for the modifier in the array and return the matching color class
