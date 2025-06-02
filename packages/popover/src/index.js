@@ -1,7 +1,7 @@
 import { computePosition, arrow, flip, offset, shift, autoUpdate, autoPlacement, detectOverflow } from '@floating-ui/dom';
 
 export default function (Alpine) {
-    // Shared functionality for both Tooltip and Popover
+    // Shared functionality for the popover
     function getPopoverOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             popoverEl = el.querySelector('[data-popover]'),
@@ -9,7 +9,7 @@ export default function (Alpine) {
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
-        let colorClass = getColorClass(modifiers);  // Get color class
+        let colorClass = getColorClass(modifiers);  // Get color class from modifiers
 
         return { triggerEl, popoverEl, isHoverable, position, transition, colorClass };
     }
@@ -35,7 +35,6 @@ export default function (Alpine) {
             'dark': ['bg-black/90', 'text-white'],
         };
 
-        // Check for the modifier in the array and return the matching color class
         return modifiers.reduce((acc, modifier) => acc || colorMapping[modifier], '');
     }
 
@@ -105,7 +104,7 @@ export default function (Alpine) {
 
         // If no colorClass found, use default color classes
         if (colorClass) {
-            popoverClass.push(colorClass);
+            popoverClass.push(...colorClass);
         } else {
             popoverClass.push(...defaultColorClasses); // Apply default classes if no color modifier is passed
         }
@@ -140,14 +139,14 @@ export default function (Alpine) {
     // Function to make and position the arrow
     function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression, colorClass) {
         let arrow_id = `arrow-${id}`;
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 ${colorClass} animate-fade" x-show="open"></span>`);
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 animate-fade" x-show="open"></span>`);
 
         const arrowEl = document.getElementById(arrow_id);
         if (!arrowEl) return;
 
         // Apply the same color to the arrow if a color modifier is set
         if (colorClass) {
-            arrowEl.classList.add(colorClass);  // Apply the color class to the arrow as well
+            arrowEl.classList.add(...colorClass);  // Apply the color class to the arrow as well
         } else {
             // Apply default color classes to the arrow
             arrowEl.classList.add(...defaultColorClasses);
