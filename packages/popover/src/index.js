@@ -4,14 +4,14 @@ export default function (Alpine) {
     function getPopoverOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             popoverEl = el.querySelector('[data-popover]'),
-            hasHover = modifiers.includes('hover');
+            isHoverable = modifiers.includes('hover');
 
         let position = getPlacement(modifiers);
         let transition = getAnimation(modifiers);
 
         // let anchor = 'x-anchor.offset.10' + (position ? `.${position}` : '');
 
-        return { triggerEl, popoverEl, hasHover, position, transition };
+        return { triggerEl, popoverEl, isHoverable, position, transition };
     }
 
     function getPlacement(modifiers) {
@@ -22,14 +22,14 @@ export default function (Alpine) {
         return ['animate-none', 'animate-drop'].find(i => modifiers.includes(i)) || 'animate-fade';
     }
 
-    Alpine.data('popover', () => ({
+    Alpine.data('popover', (isHoverable) => ({
         open: false,
-        hasHover: hasHover,
+        isHoverable: isHoverable,
         show() {
             if(!this.open) {
                 this.open = true;
             }
-            else if(!this.hasHover) {
+            else if(!this.isHoverable) {
                 //close on click if not hover functionality
                 this.open = false;
             }
@@ -40,7 +40,7 @@ export default function (Alpine) {
     }));
 
     Alpine.directive('popover', (el, {modifiers, expression}, {cleanup}) => {
-        let { triggerEl, popoverEl, hasHover, position, transition } = getPopoverOptions(el, modifiers);
+        let { triggerEl, popoverEl, isHoverable, position, transition } = getPopoverOptions(el, modifiers);
 
         if(!triggerEl || !popoverEl) {
             return !triggerEl
@@ -54,7 +54,7 @@ export default function (Alpine) {
         }
 
         //Popover wrapper add x-data
-        el.setAttribute('x-data', 'popover');
+        el.setAttribute('x-data', `popover(${isHoverable})`);
 
         //Element on click via data-toggle
         triggerEl.setAttribute('x-ref', 'button');
@@ -62,7 +62,7 @@ export default function (Alpine) {
         //Popover element data-popover
         popoverEl.id = 'popover-' + el.id;
 
-        if(!hasHover) {
+        if(!isHoverable) {
             triggerEl.setAttribute('x-on:click', 'show');
             popoverEl.setAttribute('x-on:click.outside', 'hide');
         }
