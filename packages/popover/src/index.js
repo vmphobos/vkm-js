@@ -8,8 +8,9 @@ export default function (Alpine) {
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
+        let colorClass = getColorClass(modifiers);
 
-        return { triggerEl, popoverEl, isHoverable, position, transition };
+        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass };
     }
 
     function getPlacement(modifiers) {
@@ -19,6 +20,27 @@ export default function (Alpine) {
     function getAnimation(modifiers) {
         return ['animate-none', 'animate-drop'].find(i => modifiers.includes(i)) || 'animate-fade';
     }
+
+    function getColorClass(modifiers) {
+        const colorMapping = {
+            'danger': 'bg-red-500',
+            'success': 'bg-green-500',
+            'warning': 'bg-yellow-500',
+            'info': 'bg-blue-500',
+            'primary': 'bg-blue-600',
+            'secondary': 'bg-gray-600',
+            'light': 'bg-gray-100',
+            'dark': 'bg-gray-900',
+        };
+
+        // Check for the modifier in the array and return the matching color class
+        return modifiers.reduce((acc, modifier) => acc || colorMapping[modifier], '');
+    }
+
+    const defaultColorClasses = [
+        'text-dark', 'bg-white', 'border', 'border-gray-100',
+        'dark:bg-dark-900/90', 'dark:border-black/90', 'dark:text-white'
+    ];
 
     Alpine.data('popover', (isHoverable) => ({
         open: false,
@@ -37,7 +59,7 @@ export default function (Alpine) {
     }));
 
     Alpine.directive('popover', (el, { modifiers, expression }, { cleanup }) => {
-        let { triggerEl, popoverEl, isHoverable, position, transition } = getPopoverOptions(el, modifiers);
+        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass } = getPopoverOptions(el, modifiers);
 
         if (!triggerEl || !popoverEl) {
             return !triggerEl
@@ -83,19 +105,21 @@ export default function (Alpine) {
             'font-sans',
             'font-normal',
             'text-sm',
-            'text-dark',
-            'bg-white',
-            'border',
-            'border-gray-100',
             'shadow-lg',
             'shadow-black/20',
             'focus:outline-hidden',
-            'dark:bg-dark-900/90',
-            'dark:border-black/90',
-            'dark:text-white',
             'dark:shadow-black/75',
+            colorClass,
             transition // Ensure transition class is appended dynamically
         ].join(' ');
+
+        if (colorClass) {
+            popoverClass.push(colorClass);
+        } else {
+            popoverClass.push(...defaultColorClasses); // Apply default classes if no color modifier is passed
+        }
+
+        popoverEl.classList.add(...popoverClass);
 
         popoverEl.classList.add(...popoverClass.split(' '));
 
