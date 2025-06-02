@@ -10,7 +10,7 @@ export default function (Alpine) {
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
         let colorClass = getColorClass(modifiers);  // Get color class
-        let customClasses = el.getAttribute('data-popover') || ''; // Get custom classes passed in data-popover
+        let customClasses = popoverEl.getAttribute('data-popover') || ''; // Get custom classes passed in data-popover
 
         return { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses };
     }
