@@ -94,18 +94,11 @@ export default function (Alpine) {
             'rounded-lg',
             'whitespace-normal',
             'break-words',
-            'font-sans',
             'font-normal',
             'text-sm',
-            'text-dark',  // default text color
-            'border',
-            'border-light',
             'shadow-lg',
             'shadow-black/20',
             'focus:outline-hidden',
-            'dark:bg-dark-900',
-            'dark:border-dark',
-            'dark:text-light',
             'dark:shadow-black/75',
             transition
         ];
