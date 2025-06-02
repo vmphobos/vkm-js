@@ -6,7 +6,7 @@ export default function (Alpine) {
             popoverEl = el.querySelector('[data-popover]'),
             isHoverable = modifiers.includes('hover');
 
-        let position = getPlacement(modifiers);
+        let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
 
         // let anchor = 'x-anchor.offset.10' + (position ? `.${position}` : '');
@@ -75,16 +75,24 @@ export default function (Alpine) {
         popoverEl.classList.add(transition);
 
         let overflowEl = 'clippingAncestors';
-        if(expression) {
-            // let clip_boundary = evaluate(expression);
-
-            overflowEl = document.getElementById(expression);
-            if(!overflowEl) {
+        if (expression) {
+            const overflowEl = document.getElementById(expression);
+            if (!overflowEl) {
                 console.error('Popover: Make sure the ID passed to x-popover exists in a dom element.');
             }
         }
 
         makeArrow(triggerEl, popoverEl, el.id, position, overflowEl, expression);
+
+        cleanup(() => {
+            triggerEl.removeAttribute('x-on:mouseenter.self');
+            triggerEl.removeAttribute('x-on:mouseleave');
+            triggerEl.removeAttribute('x-on:click');
+            popoverEl.removeAttribute('x-on:click.outside');
+            // Remove arrow element if exists
+            const arrowEl = document.getElementById(arrow_id);
+            if (arrowEl) arrowEl.remove();
+        });
     });
 
     function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression) {
@@ -95,7 +103,10 @@ export default function (Alpine) {
         popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow animate-fade" x-show="open"></span>`);
 
         //get arrow element
-        let arrowEl = document.getElementById(arrow_id);
+        const arrowEl = document.getElementById(arrow_id);
+        if (!arrowEl) {
+            return; // Early return if arrow isn't found
+        }
         const arrowLen = arrowEl.offsetWidth || 0;
         // console.log('arrowLen is ' + arrowLen);
         const floatingOffset = Math.sqrt(2 * arrowLen ** 2) / 2;
