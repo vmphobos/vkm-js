@@ -1,7 +1,28 @@
-import { computePosition, arrow, flip, offset, shift, autoUpdate, autoPlacement, detectOverflow } from '@floating-ui/dom';
+// Color mapping for different states
+const colorMapping = {
+    'danger': ['bg-red-200/90', 'text-red-900'],
+    'success': ['bg-emerald-200/90', 'text-emerald-900'],
+    'warning': ['bg-yellow-200/90', 'text-yellow-900'],
+    'info': ['bg-sky-200/90', 'text-sky-900'],
+    'primary': ['bg-blue-600', 'text-blue-900'],
+    'secondary': ['bg-gray-600', 'text-gray-900'],
+    'light': ['bg-gray-300/90', 'text-black'],
+    'dark': ['bg-black/90', 'text-white'],
+};
+
+// Function to get the color class based on x-popover modifier
+function getColorClass(modifiers) {
+    // Default fallback to neutral theme
+    let color = 'light';  // Default is light theme
+    modifiers.forEach(modifier => {
+        if (colorMapping[modifier]) {
+            color = modifier;  // Use the modifier if it exists in the mapping
+        }
+    });
+    return colorMapping[color] || colorMapping['light'];  // Return corresponding color classes
+}
 
 export default function (Alpine) {
-    // Shared functionality for both Tooltip and Popover
     function getPopoverOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             popoverEl = el.querySelector('[data-popover]'),
@@ -9,9 +30,8 @@ export default function (Alpine) {
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
-        let colorClass = getColorClass(modifiers);  // Get color class
 
-        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass };
+        return { triggerEl, popoverEl, isHoverable, position, transition };
     }
 
     function getPlacement(modifiers) {
@@ -21,29 +41,6 @@ export default function (Alpine) {
     function getAnimation(modifiers) {
         return ['animate-none', 'animate-drop'].find(i => modifiers.includes(i)) || 'animate-fade';
     }
-
-    // Function to get color class from modifiers
-    function getColorClass(modifiers) {
-        const colorMapping = {
-            'danger': ['bg-red-200/90', 'text-red-900'],
-            'success': ['bg-emerald-200/90', 'text-emerald-900'],
-            'warning': ['bg-yellow-200/90', 'text-yellow-900'],
-            'info': ['bg-sky-200/90', 'text-sky-900'],
-            'primary': ['bg-blue-600', 'text-blue-900'],
-            'secondary': ['bg-gray-600', 'text-gray-900'],
-            'light': ['bg-gray-300/90', 'text-black'],
-            'dark': ['bg-black/90', 'text-white'],
-        };
-
-        // Check for the modifier in the array and return the matching color class
-        return modifiers.reduce((acc, modifier) => acc || colorMapping[modifier], '');
-    }
-
-    // Default color classes if no modifier is found
-    const defaultColorClasses = [
-        'text-dark', 'bg-white', 'border', 'border-gray-100',
-        'dark:bg-dark-900/90', 'dark:border-black/90', 'dark:text-white'
-    ];
 
     Alpine.data('popover', (isHoverable) => ({
         open: false,
@@ -61,70 +58,18 @@ export default function (Alpine) {
         }
     }));
 
-    // Popover Directive
-    Alpine.directive('popover', (el, { expression, modifiers }, { cleanup }) => {
-        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass } = getPopoverOptions(el, modifiers);
+    Alpine.directive('popover', (el, { modifiers, expression }, { cleanup }) => {
+        let { triggerEl, popoverEl, isHoverable, position, transition } = getPopoverOptions(el, modifiers);
+        const [bgColor, textColor] = getColorClass(modifiers); // Get dynamic color classes
 
-        if (expression) {
-            popoverEl.innerHTML = expression; // Can be HTML or text content
-        }
+        // Default classes applied when no modifier is passed
+        const popoverClass = `${bgColor} ${textColor} z-998 w-96 min-w-fit max-w-full sm:max-w-[320px] md:max-w-sm lg:max-w-md xl:max-w-lg rounded-lg whitespace-normal break-words font-sans font-normal text-sm border border-light shadow-lg shadow-black/20 focus:outline-hidden dark:bg-dark-900 dark:border-dark dark:text-light dark:shadow-black/75 ${transition}`;
 
-        if (!triggerEl || !popoverEl) {
-            return !triggerEl
-                ? console.warn('Popover JS: Attribute data-trigger is not set!')
-                : console.warn('Popover JS: Attribute data-popover is not set!');
-        }
+        // Apply the generated class list
+        popoverEl.classList.add(popoverClass);
 
-        // Default behavior for popover (clickable or hoverable if .hover is passed)
-        el.setAttribute('x-data', `popover(${isHoverable})`);
-        triggerEl.setAttribute('x-ref', 'button');
-        popoverEl.id = 'popover-' + el.id;
-        popoverEl.setAttribute('x-show', 'open');
-
-        // Default popover classes + dynamic color classes if any
-        const popoverClass = [
-            'z-998',
-            'w-96',
-            'min-w-fit',
-            'max-w-full',
-            'sm:max-w-[320px]',
-            'md:max-w-sm',
-            'lg:max-w-md',
-            'xl:max-w-lg',
-            'rounded-lg',
-            'whitespace-normal',
-            'break-words',
-            'font-normal',
-            'text-sm',
-            'shadow-lg',
-            'shadow-black/20',
-            'focus:outline-hidden',
-            'dark:shadow-black/75',
-            transition
-        ];
-
-        // If no colorClass found, use default color classes
-        if (colorClass) {
-            popoverClass.push(colorClass);
-        } else {
-            popoverClass.push(...defaultColorClasses); // Apply default classes if no color modifier is passed
-        }
-
-        popoverEl.classList.add(...popoverClass);
-
-        // Set popover event listeners (clickable by default, hoverable if .hover is passed)
-        if (modifiers.includes('hover')) {
-            triggerEl.setAttribute('x-on:mouseenter.self', 'show');
-            triggerEl.setAttribute('x-on:mouseleave', 'hide');
-        } else {
-            triggerEl.setAttribute('x-on:click', 'show');
-            popoverEl.setAttribute('x-on:click.outside', 'hide');
-        }
-
-        // Ensure Popover is positioned correctly and add the arrow
-        Alpine.nextTick(() => {
-            makeArrow(triggerEl, popoverEl, el.id, position, 'body', expression, colorClass);
-        });
+        // Handle position and arrow functionality
+        makeArrow(triggerEl, popoverEl, el.id, position, expression, modifiers);
 
         cleanup(() => {
             triggerEl.removeAttribute('x-on:mouseenter.self');
@@ -137,22 +82,27 @@ export default function (Alpine) {
         });
     });
 
-    // Function to make and position the arrow
-    function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression, colorClass) {
+    function makeArrow(triggerEl, popoverEl, id, position, expression, modifiers) {
+        // Get the appropriate color class based on the modifiers
+        const [bgColor, textColor] = getColorClass(modifiers);
+
+        // Arrow unique ID
         let arrow_id = `arrow-${id}`;
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 ${colorClass} animate-fade" x-show="open"></span>`);
 
+        // Insert arrow with dynamic classes
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 border-t border-l animate-fade" x-show="open"></span>`);
+
+        // Get the arrow element
         const arrowEl = document.getElementById(arrow_id);
-        if (!arrowEl) return;
-
-        // Apply the same color to the arrow if a color modifier is set
-        if (colorClass) {
-            arrowEl.classList.add(colorClass);  // Apply the color class to the arrow as well
-        } else {
-            // Apply default color classes to the arrow
-            arrowEl.classList.add(...defaultColorClasses);
+        if (!arrowEl) {
+            return; // Early return if arrow isn't found
         }
 
+        // Apply the color classes to the arrow
+        arrowEl.classList.add(bgColor, textColor, 'border-t', 'border-l');
+        arrowEl.classList.add('dark:bg-black/90', 'dark:border-t-dark', 'dark:border-l-dark'); // Dark mode fallback
+
+        // Continue with the positioning and arrow styling logic
         const arrowLen = arrowEl.offsetWidth || 0;
         const floatingOffset = Math.sqrt(2 * arrowLen ** 2) / 2;
         const placement = position || 'bottom';
@@ -161,7 +111,7 @@ export default function (Alpine) {
             name: 'overflowMiddleware',
             async fn(state) {
                 const overflow = await detectOverflow(state, {
-                    boundary: overflowEl,
+                    boundary: expression,
                 });
                 return {};
             },
@@ -185,7 +135,6 @@ export default function (Alpine) {
                 });
 
                 const side = placement.split('-')[0];
-
                 const staticSide = {
                     top: 'bottom',
                     right: 'left',
@@ -207,7 +156,7 @@ export default function (Alpine) {
                         top: y != null ? `${y}px` : '',
                         right: '',
                         bottom: '',
-                        [staticSide]: `-6px`,
+                        [staticSide]: `-6px`, // Position of the arrow
                         transform: transformArrow,
                     });
                 }
