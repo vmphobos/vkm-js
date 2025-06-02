@@ -59,7 +59,7 @@ const colorMap = {
         arrow: 'border-t-white'
     },
     info: {
-        tooltip: 'bg-blue-200/90 text-blue-900',
+        tooltip: 'bg-sky-200/90 text-sky-900',
         arrow: 'border-t-blue-200'
     },
     success: {
