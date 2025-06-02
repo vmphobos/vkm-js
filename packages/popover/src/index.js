@@ -159,6 +159,12 @@ export default function (Alpine) {
                     arrow({ element: arrowEl }),
                 ]
             }).then(({ x, y, middlewareData, placement }) => {
+                // Ensure arrow is positioned only if arrowEl is found
+                if (!middlewareData.arrow) {
+                    console.warn("Arrow data is missing");
+                    return;
+                }
+
                 Object.assign(popoverEl.style, {
                     position: 'absolute',
                     left: `${x}px`,
