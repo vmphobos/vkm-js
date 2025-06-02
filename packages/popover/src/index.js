@@ -1,6 +1,7 @@
 import { computePosition, arrow, flip, offset, shift, autoUpdate, autoPlacement, detectOverflow } from '@floating-ui/dom';
 
 export default function (Alpine) {
+    // Shared functionality for both Tooltip and Popover
     function getPopoverOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             popoverEl = el.querySelector('[data-popover]'),
@@ -8,7 +9,7 @@ export default function (Alpine) {
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
-        let colorClass = getColorClass(modifiers);
+        let colorClass = getColorClass(modifiers);  // Get color class
 
         return { triggerEl, popoverEl, isHoverable, position, transition, colorClass };
     }
@@ -21,6 +22,7 @@ export default function (Alpine) {
         return ['animate-none', 'animate-drop'].find(i => modifiers.includes(i)) || 'animate-fade';
     }
 
+    // Function to get color class from modifiers
     function getColorClass(modifiers) {
         const colorMapping = {
             'danger': 'bg-red-500',
@@ -37,6 +39,7 @@ export default function (Alpine) {
         return modifiers.reduce((acc, modifier) => acc || colorMapping[modifier], '');
     }
 
+    // Default color classes if no modifier is found
     const defaultColorClasses = [
         'text-dark', 'bg-white', 'border', 'border-gray-100',
         'dark:bg-dark-900/90', 'dark:border-black/90', 'dark:text-white'
@@ -58,8 +61,13 @@ export default function (Alpine) {
         }
     }));
 
-    Alpine.directive('popover', (el, { modifiers, expression }, { cleanup }) => {
+    // Popover Directive
+    Alpine.directive('popover', (el, { expression, modifiers }, { cleanup }) => {
         let { triggerEl, popoverEl, isHoverable, position, transition, colorClass } = getPopoverOptions(el, modifiers);
+
+        if (expression) {
+            popoverEl.innerHTML = expression; // Can be HTML or text content
+        }
 
         if (!triggerEl || !popoverEl) {
             return !triggerEl
@@ -67,29 +75,13 @@ export default function (Alpine) {
                 : console.warn('Popover JS: Attribute data-popover is not set!');
         }
 
-        if (!el.id) {
-            // Random id for parent element if not exists
-            el.id = crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36);
-        }
-
-        // Popover wrapper add x-data
+        // Default behavior for popover (clickable or hoverable if .hover is passed)
         el.setAttribute('x-data', `popover(${isHoverable})`);
-
-        // Element on click via data-toggle
         triggerEl.setAttribute('x-ref', 'button');
-
-        // Popover element data-popover
         popoverEl.id = 'popover-' + el.id;
-
-        if (!isHoverable) {
-            triggerEl.setAttribute('x-on:click', 'show');
-            popoverEl.setAttribute('x-on:click.outside', 'hide');
-        } else {
-            triggerEl.setAttribute('x-on:mouseenter.self', 'show');
-            triggerEl.setAttribute('x-on:mouseleave', 'hide');
-        }
-
         popoverEl.setAttribute('x-show', 'open');
+
+        // Default popover classes + dynamic color classes if any
         const popoverClass = [
             'z-998',
             'w-96',
@@ -127,19 +119,18 @@ export default function (Alpine) {
 
         popoverEl.classList.add(...popoverClass);
 
-        // Ensure overflowEl exists, or use 'body' as fallback
-        let overflowEl = 'clippingAncestors';
-        if (expression) {
-            overflowEl = document.getElementById(expression);
-            if (!overflowEl) {
-                console.error('Popover: Make sure the ID passed to x-popover exists in a DOM element.');
-                overflowEl = 'body'; // Fallback to body if element not found
-            }
+        // Set popover event listeners (clickable by default, hoverable if .hover is passed)
+        if (modifiers.includes('hover')) {
+            triggerEl.setAttribute('x-on:mouseenter.self', 'show');
+            triggerEl.setAttribute('x-on:mouseleave', 'hide');
+        } else {
+            triggerEl.setAttribute('x-on:click', 'show');
+            popoverEl.setAttribute('x-on:click.outside', 'hide');
         }
 
-        // Wait for Alpine.js to complete the DOM updates before adding the arrow
+        // Ensure Popover is positioned correctly and add the arrow
         Alpine.nextTick(() => {
-            makeArrow(triggerEl, popoverEl, el.id, position, overflowEl, expression);
+            makeArrow(triggerEl, popoverEl, el.id, position, 'body', expression, colorClass);
         });
 
         cleanup(() => {
@@ -153,16 +144,21 @@ export default function (Alpine) {
         });
     });
 
-    function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression) {
-        // The arrow unique id
+    // Function to make and position the arrow
+    function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression, colorClass) {
         let arrow_id = `arrow-${id}`;
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade hidden"></span>`);
 
-        // Insert arrow into the DOM after the popover is fully rendered
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-gray-100 border-l-gray-100 dark:bg-dark-900/90 dark:border-t-black/90 dark:border-l-dark/90 animate-fade hidden"></span>`);
-
-        // Get arrow element
         const arrowEl = document.getElementById(arrow_id);
         if (!arrowEl) return;
+
+        // Apply the same color to the arrow if a color modifier is set
+        if (colorClass) {
+            arrowEl.classList.add(colorClass);  // Apply the color class to the arrow as well
+        } else {
+            // Apply default color classes to the arrow
+            arrowEl.classList.add(...defaultColorClasses);
+        }
 
         const arrowLen = arrowEl.offsetWidth || 0;
         const floatingOffset = Math.sqrt(2 * arrowLen ** 2) / 2;
@@ -189,12 +185,6 @@ export default function (Alpine) {
                     arrow({ element: arrowEl }),
                 ]
             }).then(({ x, y, middlewareData, placement }) => {
-                // Ensure arrow is positioned only if arrowEl is found
-                if (!middlewareData.arrow) {
-                    console.warn("Arrow data is missing");
-                    return;
-                }
-
                 Object.assign(popoverEl.style, {
                     position: 'absolute',
                     left: `${x}px`,
@@ -202,6 +192,7 @@ export default function (Alpine) {
                 });
 
                 const side = placement.split('-')[0];
+
                 const staticSide = {
                     top: 'bottom',
                     right: 'left',
@@ -223,12 +214,9 @@ export default function (Alpine) {
                         top: y != null ? `${y}px` : '',
                         right: '',
                         bottom: '',
-                        [staticSide]: `-6px`, // Adjust for arrow offset
+                        [staticSide]: `-6px`,
                         transform: transformArrow,
                     });
-
-                    // Ensure arrow is visible when popover is open
-                    arrowEl.classList.remove('hidden');
                 }
             });
         });
