@@ -9,8 +9,6 @@ export default function (Alpine) {
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
 
-        // let anchor = 'x-anchor.offset.10' + (position ? `.${position}` : '');
-
         return { triggerEl, popoverEl, isHoverable, position, transition };
     }
 
@@ -39,34 +37,33 @@ export default function (Alpine) {
         }
     }));
 
-    Alpine.directive('popover', (el, {modifiers, expression}, {cleanup}) => {
+    Alpine.directive('popover', (el, { modifiers, expression }, { cleanup }) => {
         let { triggerEl, popoverEl, isHoverable, position, transition } = getPopoverOptions(el, modifiers);
 
-        if(!triggerEl || !popoverEl) {
+        if (!triggerEl || !popoverEl) {
             return !triggerEl
                 ? console.warn('Popover JS: Attribute data-trigger is not set!')
                 : console.warn('Popover JS: Attribute data-popover is not set!');
         }
 
         if (!el.id) {
-            //random id for parent element if not exists
+            // Random id for parent element if not exists
             el.id = crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36);
         }
 
-        //Popover wrapper add x-data
+        // Popover wrapper add x-data
         el.setAttribute('x-data', `popover(${isHoverable})`);
 
-        //Element on click via data-toggle
+        // Element on click via data-toggle
         triggerEl.setAttribute('x-ref', 'button');
 
-        //Popover element data-popover
+        // Popover element data-popover
         popoverEl.id = 'popover-' + el.id;
 
-        if(!isHoverable) {
+        if (!isHoverable) {
             triggerEl.setAttribute('x-on:click', 'show');
             popoverEl.setAttribute('x-on:click.outside', 'hide');
-        }
-        else {
+        } else {
             triggerEl.setAttribute('x-on:mouseenter.self', 'show');
             triggerEl.setAttribute('x-on:mouseleave', 'hide');
         }
@@ -78,9 +75,9 @@ export default function (Alpine) {
 
         let overflowEl = 'clippingAncestors';
         if (expression) {
-            const overflowEl = document.getElementById(expression);
+            overflowEl = document.getElementById(expression);
             if (!overflowEl) {
-                console.error('Popover: Make sure the ID passed to x-popover exists in a dom element.');
+                console.error('Popover: Make sure the ID passed to x-popover exists in a DOM element.');
             }
         }
 
@@ -92,25 +89,25 @@ export default function (Alpine) {
             triggerEl.removeAttribute('x-on:click');
             popoverEl.removeAttribute('x-on:click.outside');
             // Remove arrow element if exists
-            const arrowEl = document.getElementById(arrow_id);
+            const arrowEl = document.getElementById(`arrow-${el.id}`);
             if (arrowEl) arrowEl.remove();
         });
     });
 
     function makeArrow(triggerEl, popoverEl, id, position, overflowEl, expression) {
-        //the arrow unique id
+        // The arrow unique id
         let arrow_id = `arrow-${id}`;
 
-        //insert arrow to the dom
-        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade" x-show="open"></span>`);
+        // Insert arrow into the DOM after the popover is fully rendered
+        requestAnimationFrame(() => {
+            popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade hidden"></span>`);
+        });
 
-        //get arrow element
+        // Get arrow element
         const arrowEl = document.getElementById(arrow_id);
-        if (!arrowEl) {
-            return; // Early return if arrow isn't found
-        }
+        if (!arrowEl) return;
+
         const arrowLen = arrowEl.offsetWidth || 0;
-        // console.log('arrowLen is ' + arrowLen);
         const floatingOffset = Math.sqrt(2 * arrowLen ** 2) / 2;
         const placement = position || 'bottom';
 
@@ -120,7 +117,6 @@ export default function (Alpine) {
                 const overflow = await detectOverflow(state, {
                     boundary: overflowEl,
                 });
-                // console.log(expression + ' should flip:', overflow.top >= 0);
                 return {};
             },
         };
@@ -143,7 +139,6 @@ export default function (Alpine) {
                 });
 
                 const side = placement.split('-')[0];
-
                 const staticSide = {
                     top: 'bottom',
                     right: 'left',
@@ -159,18 +154,19 @@ export default function (Alpine) {
                 }[side];
 
                 if (middlewareData.arrow) {
-                    // console.log('popover has arrow');
                     const { x, y } = middlewareData.arrow;
                     Object.assign(arrowEl.style, {
                         left: x != null ? `${x}px` : '',
                         top: y != null ? `${y}px` : '',
-                        // Ensure the static side gets unset when
-                        // flipping to other placements' axes.
                         right: '',
                         bottom: '',
-                        [staticSide]: `-6px`, //${(-arrowLen / 2) - 6}
+                        [staticSide]: `-6px`, // Adjust for arrow offset
                         transform: transformArrow,
                     });
+                    // Ensure arrow is visible when popover is open
+                    if (!arrowEl.classList.contains('hidden')) {
+                        arrowEl.classList.remove('hidden');
+                    }
                 }
             });
         });
