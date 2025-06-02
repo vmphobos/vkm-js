@@ -1,4 +1,4 @@
-import {computePosition, arrow, flip, offset, shift, autoUpdate, autoPlacement, detectOverflow } from '@floating-ui/dom';
+import { computePosition, arrow, flip, offset, shift, autoUpdate, autoPlacement, detectOverflow } from '@floating-ui/dom';
 
 export default function (Alpine) {
     function getPopoverOptions(el, modifiers) {
@@ -24,11 +24,10 @@ export default function (Alpine) {
         open: false,
         isHoverable: isHoverable,
         show() {
-            if(!this.open) {
+            if (!this.open) {
                 this.open = true;
             }
-            else if(!this.isHoverable) {
-                //close on click if not hover functionality
+            else if (!this.isHoverable) {
                 this.open = false;
             }
         },
@@ -69,7 +68,7 @@ export default function (Alpine) {
         }
 
         popoverEl.setAttribute('x-show', 'open');
-        popoverEl.classList.add(...[
+        const popoverClass = [
             'z-998',
             'w-96',
             'min-w-fit',
@@ -95,8 +94,10 @@ export default function (Alpine) {
             'dark:border-dark',
             'dark:text-light',
             'dark:shadow-black/75',
-            transition //add transition dynamically
-        ].join(' ').split(' '));
+            transition // Ensure transition class is appended dynamically
+        ].join(' ');
+
+        popoverEl.classList.add(...popoverClass.split(' '));
 
         let overflowEl = 'clippingAncestors';
         if (expression) {
@@ -106,7 +107,10 @@ export default function (Alpine) {
             }
         }
 
-        makeArrow(triggerEl, popoverEl, el.id, position, overflowEl, expression);
+        // Wait for Alpine.js to complete the DOM updates before adding the arrow
+        Alpine.nextTick(() => {
+            makeArrow(triggerEl, popoverEl, el.id, position, overflowEl, expression);
+        });
 
         cleanup(() => {
             triggerEl.removeAttribute('x-on:mouseenter.self');
@@ -124,9 +128,7 @@ export default function (Alpine) {
         let arrow_id = `arrow-${id}`;
 
         // Insert arrow into the DOM after the popover is fully rendered
-        requestAnimationFrame(() => {
-            popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade hidden"></span>`);
-        });
+        popoverEl.insertAdjacentHTML('afterbegin', `<span id="${arrow_id}" class="popover-arrow absolute z-999 h-3 w-3 bg-white border-t border-l border-t-light border-l-light dark:bg-dark-900 dark:border-t-dark dark:border-l-dark animate-fade hidden"></span>`);
 
         // Get arrow element
         const arrowEl = document.getElementById(arrow_id);
@@ -188,10 +190,9 @@ export default function (Alpine) {
                         [staticSide]: `-6px`, // Adjust for arrow offset
                         transform: transformArrow,
                     });
+
                     // Ensure arrow is visible when popover is open
-                    if (!arrowEl.classList.contains('hidden')) {
-                        arrowEl.classList.remove('hidden');
-                    }
+                    arrowEl.classList.remove('hidden');
                 }
             });
         });
