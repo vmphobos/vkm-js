@@ -9,9 +9,10 @@ export default function (Alpine) {
 
         let position = getPlacement(modifiers) || 'bottom';
         let transition = getAnimation(modifiers);
-        let colorClass = getColorClass(modifiers);  // Get color class from modifiers
+        let colorClass = getColorClass(modifiers);  // Get color class
+        let customClasses = el.getAttribute('data-popover') || ''; // Get custom classes passed in data-popover
 
-        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass };
+        return { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses };
     }
 
     function getPlacement(modifiers) {
@@ -62,7 +63,7 @@ export default function (Alpine) {
 
     // Popover Directive
     Alpine.directive('popover', (el, { expression, modifiers }, { cleanup }) => {
-        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass } = getPopoverOptions(el, modifiers);
+        let { triggerEl, popoverEl, isHoverable, position, transition, colorClass, customClasses } = getPopoverOptions(el, modifiers);
 
         if (expression) {
             popoverEl.innerHTML = expression; // Can be HTML or text content
@@ -80,33 +81,41 @@ export default function (Alpine) {
         popoverEl.id = 'popover-' + el.id;
         popoverEl.setAttribute('x-show', 'open');
 
-        // Default popover classes + dynamic color classes if any
-        const popoverClass = [
-            'z-998',
-            'w-96',
-            'min-w-fit',
-            'max-w-full',
-            'sm:max-w-[320px]',
-            'md:max-w-sm',
-            'lg:max-w-md',
-            'xl:max-w-lg',
-            'rounded-lg',
-            'whitespace-normal',
-            'break-words',
-            'font-normal',
-            'text-sm',
-            'shadow-lg',
-            'shadow-black/20',
-            'focus:outline-hidden',
-            'dark:shadow-black/75',
-            transition
-        ];
+        // Start with an empty popover class list, then add custom classes if provided
+        let popoverClass = [];
+
+        // If customClasses exists (from data-popover), replace the default classes
+        if (customClasses) {
+            popoverClass = customClasses.split(' '); // Split the custom classes into an array
+        } else {
+            // Apply default classes if no custom classes are passed
+            popoverClass = [
+                'z-998',
+                'w-96',
+                'min-w-fit',
+                'max-w-full',
+                'sm:max-w-[320px]',
+                'md:max-w-sm',
+                'lg:max-w-md',
+                'xl:max-w-lg',
+                'rounded-lg',
+                'whitespace-normal',
+                'break-words',
+                'font-normal',
+                'text-sm',
+                'shadow-lg',
+                'shadow-black/20',
+                'focus:outline-hidden',
+                'dark:shadow-black/75',
+                transition
+            ];
+        }
 
         // If no colorClass found, use default color classes
         if (colorClass) {
-            popoverClass.push(...colorClass);
+            popoverClass.push(...colorClass);  // Apply the color class to the popover
         } else {
-            popoverClass.push(...defaultColorClasses); // Apply default classes if no color modifier is passed
+            popoverClass.push(...defaultColorClasses); // Apply default color classes if no color modifier is passed
         }
 
         popoverEl.classList.add(...popoverClass);
