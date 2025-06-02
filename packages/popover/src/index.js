@@ -69,9 +69,34 @@ export default function (Alpine) {
         }
 
         popoverEl.setAttribute('x-show', 'open');
-        const popoverClass = `z-998 w-96 min-w-fit max-w-full sm:max-w-[320px] md:max-w-sm lg:max-w-md xl:max-w-lg rounded-lg whitespace-normal break-words font-sans font-normal text-sm text-dark bg-white border border-light shadow-lg shadow-black/20 focus:outline-hidden dark:bg-dark-900 dark:border-dark dark:text-light dark:shadow-black/75 ${transition}`;
-
-        popoverEl.classList.add(popoverClass);
+        popoverEl.classList.add(...[
+            'z-998',
+            'w-96',
+            'min-w-fit',
+            'max-w-full',
+            'sm:max-w-[320px]',
+            'md:max-w-sm',
+            'lg:max-w-md',
+            'xl:max-w-lg',
+            'rounded-lg',
+            'whitespace-normal',
+            'break-words',
+            'font-sans',
+            'font-normal',
+            'text-sm',
+            'text-dark',
+            'bg-white',
+            'border',
+            'border-light',
+            'shadow-lg',
+            'shadow-black/20',
+            'focus:outline-hidden',
+            'dark:bg-dark-900',
+            'dark:border-dark',
+            'dark:text-light',
+            'dark:shadow-black/75',
+            transition //add transition dynamically
+        ].join(' ').split(' '));
 
         let overflowEl = 'clippingAncestors';
         if (expression) {
