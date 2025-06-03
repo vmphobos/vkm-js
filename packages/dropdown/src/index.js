@@ -33,14 +33,15 @@ export default function (Alpine) {
         wrapper.appendChild(triggerEl);
         wrapper.appendChild(dropdownEl);
 
+        // Add transparent buffer element between the trigger and dropdown
+        const buffer = document.createElement('div');
+        buffer.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-2', 'bg-transparent', 'z-10');
+        wrapper.appendChild(buffer);
+
         // Replace the original content with the wrapper
         el.appendChild(wrapper);
 
-        // Use `mouseenter` and `mouseleave` on the entire wrapper to manage hover states
-        wrapper.setAttribute('x-on:mouseenter', 'open = true');
-        wrapper.setAttribute('x-on:mouseleave', 'open = false');
-
-        // Element on click via data-toggle
+        // Element hover behavior for trigger and dropdown
         triggerEl.setAttribute('x-on:mouseenter', 'open = true');
         triggerEl.setAttribute('x-on:mouseleave', 'open = false');
         dropdownEl.setAttribute('x-on:mouseenter', 'open = true');
@@ -68,13 +69,7 @@ export default function (Alpine) {
         dropdownEl.setAttribute('x-on:keydown.up.prevent', '$focus.wrap().previous()');
         dropdownEl.setAttribute('role', 'menu');
 
-        // Add transparent buffer below the trigger
-        const buffer = document.createElement('div');
-        buffer.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-full', 'bg-transparent', 'z-10');
-        wrapper.appendChild(buffer); // Make the buffer part of the wrapper
-
-        // Handle hover behavior for the group
-        // We make sure the dropdown stays open when mouse is inside the wrapper (trigger + dropdown)
+        // Handle hover behavior for the entire wrapper to manage the dropdown state
         wrapper.setAttribute('x-on:mouseenter', 'open = true');
         wrapper.setAttribute('x-on:mouseleave', 'open = false');
 
