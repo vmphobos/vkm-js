@@ -14,8 +14,10 @@ if (!version) return exitWith('❌ You must pass a version number: npm run relea
 let packages = [
     'closeable',
     'dropdown',
-    'popover',
     'modal',
+    'money',
+    'popover',
+    'tooltip',
     // Add more packages here
 ];
 
