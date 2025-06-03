@@ -12,8 +12,8 @@ export default function (Alpine) {
         }
     }));
 
-    Alpine.directive('dropdown', (el, {modifiers}, {cleanup}) => {
-        let {triggerEl, dropdownEl, position, closeOnClickInside} = getDropdownOptions(el, modifiers);
+    Alpine.directive('dropdown', (el, { modifiers }, { cleanup }) => {
+        let { triggerEl, dropdownEl, position, closeOnClickInside } = getDropdownOptions(el, modifiers);
         const placement = 'x-anchor.' + (position || 'bottom-start');
 
         if (!triggerEl || !dropdownEl) {
@@ -23,19 +23,17 @@ export default function (Alpine) {
         }
 
         if (!el.id) {
-            //random id for parent element if not exists
+            // Random ID for parent element if not exists
             el.id = crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36);
         }
 
-        //Popover wrapper add x-data
+        // Popover wrapper add x-data
         el.setAttribute('x-data', 'dropdown');
         el.classList.add('relative');
         el.setAttribute('x-on:keydown.esc.window', 'close()');
         el.setAttribute('x-on:keydown.escape.prevent.stop', 'close()');
-        // el.setAttribute('x-on:focusin.window', '$refs.panel.contains($event.target) && close()');
 
-        //Element on click via data-toggle
-        triggerEl.setAttribute('x-on:click', 'toggle()');
+        // Element on click via data-toggle
         triggerEl.setAttribute('x-ref', 'dropdownBtn');
         triggerEl.setAttribute('x-on:keydown.space.prevent', 'keyboardTrigger = true');
         triggerEl.setAttribute('x-on:keydown.enter.prevent', 'keyboardTrigger = true');
@@ -44,7 +42,7 @@ export default function (Alpine) {
         triggerEl.setAttribute('aria-haspopup', 'true');
         triggerEl.setAttribute('aria-expanded', 'true');
 
-        //Popover element data-popover
+        // Popover element data-popover
         dropdownEl.setAttribute('x-cloak', '');
         dropdownEl.setAttribute('x-transition.origin.top.left', '');
         dropdownEl.setAttribute('x-trap', 'keyboardTrigger');
@@ -66,6 +64,18 @@ export default function (Alpine) {
         dropdownEl.setAttribute('x-on:keydown.up.prevent', '$focus.wrap().previous()');
         dropdownEl.setAttribute('role', 'menu');
 
+        // Handle hover behavior
+        if (modifiers.includes('hover')) {
+            // Add mouseenter and mouseleave events for hover behavior
+            triggerEl.setAttribute('x-on:mouseenter', 'open = true');
+            triggerEl.setAttribute('x-on:mouseleave', 'open = false');
+            dropdownEl.setAttribute('x-on:mouseenter', 'open = true');
+            dropdownEl.setAttribute('x-on:mouseleave', 'open = false');
+        } else {
+            // Default click behavior
+            triggerEl.setAttribute('x-on:click', 'toggle()');
+        }
+
         el.setAttribute('x-data', 'dropdown'); // This now refers to globally registered Alpine.data
     });
 
@@ -75,10 +85,11 @@ export default function (Alpine) {
             position = getPlacement(modifiers),
             closeOnClickInside = modifiers.includes('select');
 
-        return {triggerEl, dropdownEl, position, closeOnClickInside};
+        return { triggerEl, dropdownEl, position, closeOnClickInside };
     }
 
     function getPlacement(modifiers) {
-        return ['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end'].find(i => modifiers.includes(i)) || '';
+        return ['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end']
+            .find(i => modifiers.includes(i)) || '';
     }
 }
