@@ -35,14 +35,23 @@ export default function (Alpine) {
         el.setAttribute('x-on:keydown.esc.window', 'close()');
         el.setAttribute('x-on:keydown.escape.prevent.stop', 'close()');
 
+        // Create the wrapper element
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('x-ref', 'dropdownWrapper');
+        wrapper.classList.add('relative', 'group'); // Use group for grouping hover styles
+
+        // Add trigger and dropdown to the wrapper
+        wrapper.appendChild(triggerEl);
+        wrapper.appendChild(dropdownEl);
+
+        // Replace the original content with the wrapper
+        el.appendChild(wrapper);
+
         // Element on click via data-toggle
-        triggerEl.setAttribute('x-ref', 'dropdownBtn');
-        triggerEl.setAttribute('x-on:keydown.space.prevent', 'keyboardTrigger = true');
-        triggerEl.setAttribute('x-on:keydown.enter.prevent', 'keyboardTrigger = true');
-        triggerEl.setAttribute('x-on:keydown.down.prevent', 'keyboardTrigger = true');
-        triggerEl.setAttribute(':aria-expanded', 'open || keyboardTrigger');
-        triggerEl.setAttribute('aria-haspopup', 'true');
-        triggerEl.setAttribute('aria-expanded', 'true');
+        triggerEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
+        triggerEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
+        dropdownEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
+        dropdownEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
 
         // Popover element data-popover
         dropdownEl.setAttribute('x-cloak', '');
@@ -50,7 +59,7 @@ export default function (Alpine) {
         dropdownEl.setAttribute('x-trap', 'keyboardTrigger');
         dropdownEl.setAttribute(placement, '$refs.dropdownBtn');
         dropdownEl.setAttribute('x-ref', 'panel');
-        dropdownEl.setAttribute('x-show', 'open || keyboardTrigger');
+        dropdownEl.setAttribute('x-show', 'open');
 
         if (!modifiers.includes('custom')) {
             dropdownEl.classList.add('absolute', 'mt-2', 'shadow-lg', 'bg-white/90', 'dark:bg-black/90', 'rounded-lg', 'flex', 'flex-col', 'w-full', 'min-w-72', 'z-1000', 'py-2');
@@ -66,17 +75,14 @@ export default function (Alpine) {
         dropdownEl.setAttribute('x-on:keydown.up.prevent', '$focus.wrap().previous()');
         dropdownEl.setAttribute('role', 'menu');
 
-        // Handle hover behavior
-        if (modifiers.includes('hover')) {
-            // Hover: Set mouseenter and mouseleave events for hover behavior
-            triggerEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
-            triggerEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
-            dropdownEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
-            dropdownEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
-        } else {
-            // Default click behavior
-            triggerEl.setAttribute('x-on:click', 'toggle()');
-        }
+        // Add transparent buffer below the trigger
+        const buffer = document.createElement('div');
+        buffer.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-full', 'bg-transparent', 'z-10');
+        wrapper.appendChild(buffer); // Make the buffer part of the wrapper
+
+        // Handle hover behavior for the group
+        wrapper.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
+        wrapper.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
 
         el.setAttribute('x-data', 'dropdown'); // This now refers to globally registered Alpine.data
     });
