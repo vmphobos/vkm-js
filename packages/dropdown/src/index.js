@@ -1,9 +1,6 @@
 export default function (Alpine) {
     Alpine.data('dropdown', () => ({
-        open: false,
-        clearCloseTimeout() {
-            // No need to clear timeout since we're not using it anymore
-        }
+        open: false
     }));
 
     Alpine.directive('dropdown', (el, { modifiers }, { cleanup }) => {
@@ -39,6 +36,10 @@ export default function (Alpine) {
         // Replace the original content with the wrapper
         el.appendChild(wrapper);
 
+        // Use `mouseenter` and `mouseleave` on the entire wrapper to manage hover states
+        wrapper.setAttribute('x-on:mouseenter', 'open = true');
+        wrapper.setAttribute('x-on:mouseleave', 'open = false');
+
         // Element on click via data-toggle
         triggerEl.setAttribute('x-on:mouseenter', 'open = true');
         triggerEl.setAttribute('x-on:mouseleave', 'open = false');
@@ -73,6 +74,7 @@ export default function (Alpine) {
         wrapper.appendChild(buffer); // Make the buffer part of the wrapper
 
         // Handle hover behavior for the group
+        // We make sure the dropdown stays open when mouse is inside the wrapper (trigger + dropdown)
         wrapper.setAttribute('x-on:mouseenter', 'open = true');
         wrapper.setAttribute('x-on:mouseleave', 'open = false');
 
