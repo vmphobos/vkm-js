@@ -2,6 +2,7 @@ export default function (Alpine) {
     Alpine.data('dropdown', () => ({
         open: false,
         keyboardTrigger: false,
+        closeTimeout: null,  // Store the timeout for closing
         toggle() {
             this.open = this.open ? this.close() : true;
         },
@@ -9,6 +10,16 @@ export default function (Alpine) {
             this.open = false;
             this.keyboardTrigger = false;
             focusAfter && focusAfter.focus();
+        },
+        setCloseTimeout() {
+            // Set a close timeout to avoid immediate close when hovering between trigger and dropdown
+            this.closeTimeout = setTimeout(() => {
+                this.open = false;
+            }, 300);  // 300ms delay
+        },
+        clearCloseTimeout() {
+            // Clear the close timeout if hovering over the dropdown
+            clearTimeout(this.closeTimeout);
         }
     }));
 
@@ -66,11 +77,11 @@ export default function (Alpine) {
 
         // Handle hover behavior
         if (modifiers.includes('hover')) {
-            // Add mouseenter and mouseleave events for hover behavior
-            triggerEl.setAttribute('x-on:mouseenter', 'open = true');
-            triggerEl.setAttribute('x-on:mouseleave', 'open = false');
-            dropdownEl.setAttribute('x-on:mouseenter', 'open = true');
-            dropdownEl.setAttribute('x-on:mouseleave', 'open = false');
+            // Hover: Set mouseenter and mouseleave events for hover behavior
+            triggerEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
+            triggerEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
+            dropdownEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
+            dropdownEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
         } else {
             // Default click behavior
             triggerEl.setAttribute('x-on:click', 'toggle()');
