@@ -14,7 +14,8 @@
   "unpkg": "build/cdn.min.js",
   "dependencies": {},
   "peerDependencies": {
-    "alpinejs": "^3.0.0"
+    "alpinejs": "^3.0.0",
+    "@floating-ui/dom": "^2.0.0"
   },
   "keywords": [
     "Popover",
