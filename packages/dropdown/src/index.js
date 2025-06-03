@@ -1,16 +1,8 @@
 export default function (Alpine) {
     Alpine.data('dropdown', () => ({
         open: false,
-        closeTimeout: null,  // Store the timeout for closing
-        setCloseTimeout() {
-            // Set a close timeout to avoid immediate close when hovering between trigger and dropdown
-            this.closeTimeout = setTimeout(() => {
-                this.open = false;
-            }, 300);  // 300ms delay
-        },
         clearCloseTimeout() {
-            // Clear the close timeout if hovering over the dropdown
-            clearTimeout(this.closeTimeout);
+            // No need to clear timeout since we're not using it anymore
         }
     }));
 
@@ -48,10 +40,10 @@ export default function (Alpine) {
         el.appendChild(wrapper);
 
         // Element on click via data-toggle
-        triggerEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
-        triggerEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
-        dropdownEl.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
-        dropdownEl.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
+        triggerEl.setAttribute('x-on:mouseenter', 'open = true');
+        triggerEl.setAttribute('x-on:mouseleave', 'open = false');
+        dropdownEl.setAttribute('x-on:mouseenter', 'open = true');
+        dropdownEl.setAttribute('x-on:mouseleave', 'open = false');
 
         // Popover element data-popover
         dropdownEl.setAttribute('x-cloak', '');
@@ -81,8 +73,8 @@ export default function (Alpine) {
         wrapper.appendChild(buffer); // Make the buffer part of the wrapper
 
         // Handle hover behavior for the group
-        wrapper.setAttribute('x-on:mouseenter', 'open = true; clearCloseTimeout()');
-        wrapper.setAttribute('x-on:mouseleave', 'setCloseTimeout()');
+        wrapper.setAttribute('x-on:mouseenter', 'open = true');
+        wrapper.setAttribute('x-on:mouseleave', 'open = false');
 
         el.setAttribute('x-data', 'dropdown'); // This now refers to globally registered Alpine.data
     });
