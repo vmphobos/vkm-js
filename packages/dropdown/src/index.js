@@ -1,92 +1,34 @@
 export default function (Alpine) {
     Alpine.data('dropdown', () => ({
-        open: false
+        open: false,
     }));
 
     Alpine.directive('dropdown', (el, { modifiers }, { cleanup }) => {
-        let { triggerEl, dropdownEl, position, closeOnClickInside } = getDropdownOptions(el, modifiers);
-        const placement = 'x-anchor.' + (position || 'bottom-start');
+        let triggerEl = el.querySelector('[data-trigger]');
+        let dropdownEl = el.querySelector('[data-dropdown]');
 
         if (!triggerEl || !dropdownEl) {
-            return !triggerEl
-                ? console.warn('Dropdown JS: Attribute data-trigger is not set!')
-                : console.warn('Dropdown JS: Attribute data-dropdown is not set!');
+            console.warn('Dropdown JS: Attribute data-trigger or data-dropdown is not set!');
+            return;
         }
 
-        if (!el.id) {
-            // Random ID for parent element if not exists
-            el.id = crypto.getRandomValues(new Uint32Array(1))[0].toString(36) + Date.now().toString(36);
-        }
-
-        // Popover wrapper add x-data
-        el.setAttribute('x-data', 'dropdown');
-        el.classList.add('relative');
-        el.setAttribute('x-on:keydown.esc.window', 'close()');
-        el.setAttribute('x-on:keydown.escape.prevent.stop', 'close()');
-
-        // Create the wrapper element
-        const wrapper = document.createElement('div');
-        wrapper.setAttribute('x-ref', 'dropdownWrapper');
-        wrapper.classList.add('relative', 'group'); // Use group for grouping hover styles
-
-        // Add trigger and dropdown to the wrapper
-        wrapper.appendChild(triggerEl);
-        wrapper.appendChild(dropdownEl);
-
-        // Add transparent buffer element between the trigger and dropdown
-        const buffer = document.createElement('div');
-        buffer.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-2', 'bg-transparent', 'z-10');
-        wrapper.appendChild(buffer);
-
-        // Replace the original content with the wrapper
-        el.appendChild(wrapper);
-
-        // Element hover behavior for trigger and dropdown
+        // Add mouseenter and mouseleave events for trigger and dropdown elements
         triggerEl.setAttribute('x-on:mouseenter', 'open = true');
         triggerEl.setAttribute('x-on:mouseleave', 'open = false');
+
+        // On the dropdown itself, maintain its visibility while hovering
         dropdownEl.setAttribute('x-on:mouseenter', 'open = true');
         dropdownEl.setAttribute('x-on:mouseleave', 'open = false');
 
-        // Popover element data-popover
+        // Use the wrapper to handle hover outside to close the dropdown
+        el.setAttribute('x-on:mouseenter', 'open = true');
+        el.setAttribute('x-on:mouseleave', 'open = false');
+
+        // Make sure the dropdown is initially hidden
         dropdownEl.setAttribute('x-cloak', '');
-        dropdownEl.setAttribute('x-transition.origin.top.left', '');
-        dropdownEl.setAttribute('x-trap', 'keyboardTrigger');
-        dropdownEl.setAttribute(placement, '$refs.dropdownBtn');
-        dropdownEl.setAttribute('x-ref', 'panel');
-        dropdownEl.setAttribute('x-show', 'open');
 
-        if (!modifiers.includes('custom')) {
-            dropdownEl.classList.add('absolute', 'mt-2', 'shadow-lg', 'bg-white/90', 'dark:bg-black/90', 'rounded-lg', 'flex', 'flex-col', 'w-full', 'min-w-72', 'z-1000', 'py-2');
-        }
-
-        dropdownEl.setAttribute('x-on:click.outside', 'close()');
-
-        if (closeOnClickInside) {
-            dropdownEl.setAttribute('x-on:click', 'close()');
-        }
-
-        dropdownEl.setAttribute('x-on:keydown.down.prevent', '$focus.wrap().next()');
-        dropdownEl.setAttribute('x-on:keydown.up.prevent', '$focus.wrap().previous()');
-        dropdownEl.setAttribute('role', 'menu');
-
-        // Handle hover behavior for the entire wrapper to manage the dropdown state
-        wrapper.setAttribute('x-on:mouseenter', 'open = true');
-        wrapper.setAttribute('x-on:mouseleave', 'open = false');
-
-        el.setAttribute('x-data', 'dropdown'); // This now refers to globally registered Alpine.data
+        // You can add any custom styles for the dropdown here
+        dropdownEl.classList.add('absolute', 'mt-2', 'shadow-lg', 'bg-white/90', 'dark:bg-black/90', 'rounded-lg', 'flex', 'flex-col', 'w-full', 'min-w-72', 'z-1000', 'py-2');
     });
 
-    function getDropdownOptions(el, modifiers) {
-        let triggerEl = el.querySelector('[data-trigger]'),
-            dropdownEl = el.querySelector('[data-dropdown]'),
-            position = getPlacement(modifiers),
-            closeOnClickInside = modifiers.includes('select');
-
-        return { triggerEl, dropdownEl, position, closeOnClickInside };
-    }
-
-    function getPlacement(modifiers) {
-        return ['top', 'top-start', 'top-end', 'right', 'right-start', 'right-end', 'bottom', 'bottom-start', 'bottom-end', 'left', 'left-start', 'left-end']
-            .find(i => modifiers.includes(i)) || '';
-    }
 }
