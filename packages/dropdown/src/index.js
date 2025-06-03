@@ -1,16 +1,7 @@
 export default function (Alpine) {
     Alpine.data('dropdown', () => ({
         open: false,
-        keyboardTrigger: false,
         closeTimeout: null,  // Store the timeout for closing
-        toggle() {
-            this.open = this.open ? this.close() : true;
-        },
-        close(focusAfter) {
-            this.open = false;
-            this.keyboardTrigger = false;
-            focusAfter && focusAfter.focus();
-        },
         setCloseTimeout() {
             // Set a close timeout to avoid immediate close when hovering between trigger and dropdown
             this.closeTimeout = setTimeout(() => {
