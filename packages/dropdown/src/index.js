@@ -1,6 +1,7 @@
 export default function (Alpine) {
     Alpine.data('dropdown', () => ({
         open: false,
+        exitHover: false,
         keyboardTrigger: false,
         toggle() {
             this.open = this.open ? this.close() : true;
@@ -13,7 +14,7 @@ export default function (Alpine) {
     }));
 
     Alpine.directive('dropdown', (el, {modifiers}, {cleanup}) => {
-        let {triggerEl, dropdownEl, position, closeOnClickInside} = getDropdownOptions(el, modifiers);
+        let {triggerEl, dropdownEl, position, closeOnClickInside, isHoverable} = getDropdownOptions(el, modifiers);
         const placement = 'x-anchor.' + (position || 'bottom-start');
 
         if (!triggerEl || !dropdownEl) {
@@ -35,14 +36,26 @@ export default function (Alpine) {
         // el.setAttribute('x-on:focusin.window', '$refs.panel.contains($event.target) && close()');
 
         //Element on click via data-toggle
-        triggerEl.setAttribute('x-on:click', 'toggle()');
+        if (isHoverable) {
+            triggerEl.setAttribute('x-on:mouseover', 'open = true');
+            el.setAttribute('x-on:mouseenter', "console.log('mousenter'),exitHover ? clearTimeout(exitHover) : true");
+            el.setAttribute('x-on:mouseleave.prevent', "console.log('mouseleave'), exitHover = setTimeout(() => { open = false }, 50)");
+        }
+        else {
+            triggerEl.setAttribute('x-on:click', 'toggle()');
+        }
+
+        if (!triggerEl.id) {
+            triggerEl.id = `btn-${el.id}`;
+        }
+
         triggerEl.setAttribute('x-ref', 'dropdownBtn');
         triggerEl.setAttribute('x-on:keydown.space.prevent', 'keyboardTrigger = true');
         triggerEl.setAttribute('x-on:keydown.enter.prevent', 'keyboardTrigger = true');
         triggerEl.setAttribute('x-on:keydown.down.prevent', 'keyboardTrigger = true');
-        triggerEl.setAttribute(':aria-expanded', 'open || keyboardTrigger');
+        triggerEl.setAttribute(':aria-expanded', '(open || keyboardTrigger).toString()');
         triggerEl.setAttribute('aria-haspopup', 'true');
-        triggerEl.setAttribute('aria-expanded', 'true');
+        triggerEl.setAttribute('aria-label', 'Dropdown');
 
         //Popover element data-popover
         dropdownEl.setAttribute('x-cloak', '');
@@ -53,7 +66,10 @@ export default function (Alpine) {
         dropdownEl.setAttribute('x-show', 'open || keyboardTrigger');
 
         if (!modifiers.includes('custom')) {
-            dropdownEl.classList.add('absolute', 'mt-2', 'shadow-lg', 'bg-white/90', 'dark:bg-black/90', 'rounded-lg', 'flex', 'flex-col', 'w-full', 'min-w-72', 'z-1000', 'py-2');
+            dropdownEl.classList.add('absolute', 'mt-2', 'shadow-lg', 'bg-white/90', 'dark:bg-black/90', 'rounded-sm', 'flex', 'flex-col', 'w-full', 'min-w-72', 'z-1000', 'py-2');
+        }
+        else {
+            dropdownEl.classList.add('absolute', 'z-1000');
         }
 
         dropdownEl.setAttribute('x-on:click.outside', 'close()');
@@ -64,18 +80,23 @@ export default function (Alpine) {
 
         dropdownEl.setAttribute('x-on:keydown.down.prevent', '$focus.wrap().next()');
         dropdownEl.setAttribute('x-on:keydown.up.prevent', '$focus.wrap().previous()');
+        dropdownEl.setAttribute('x-on:keydown.tab', 'close()');
+        dropdownEl.setAttribute('x-on:keydown.shift.tab', 'close()');
         dropdownEl.setAttribute('role', 'menu');
+        dropdownEl.setAttribute('aria-orientation', 'vertical');
+        dropdownEl.setAttribute('aria-labelledby', triggerEl.id);
 
-        el.setAttribute('x-data', 'dropdown'); // This now refers to globally registered Alpine.data
+        el.setAttribute('x-data', 'dropdown');
     });
 
     function getDropdownOptions(el, modifiers) {
         let triggerEl = el.querySelector('[data-trigger]'),
             dropdownEl = el.querySelector('[data-dropdown]'),
             position = getPlacement(modifiers),
+            isHoverable = modifiers.includes('hover'),
             closeOnClickInside = modifiers.includes('select');
 
-        return {triggerEl, dropdownEl, position, closeOnClickInside};
+        return {triggerEl, dropdownEl, position, closeOnClickInside, isHoverable};
     }
 
     function getPlacement(modifiers) {
