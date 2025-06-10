@@ -1,35 +1,51 @@
-Alpine.directive('money', (el, { modifiers, expression }) => {
-    let [locale = 'en', currency = 'EUR', decimals] = modifiers || [];
+export default function (Alpine) {
+    Alpine.directive('money', (el, {modifiers, expression}, {cleanup}) => {
+        let format_for_humans = '',
+            [locale, currency, decimals] = modifiers || ['en', 'EUR', null],
+            number_format = new Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency: currency,
+                currencyDisplay: expression || 'symbol'
+            });
 
-    const currencyOverrides = {
-        ZAR: 'R', TRY: '₺', HRK: 'kn', DKK: 'kr', BGN: 'лв', AED: 'د.إ',
-        RUB: '₽', UAH: '₴', JPY: '¥', AUD: 'A$', CNY: '¥', INR: '₹',
-        IDR: 'Rp', MYR: 'RM', PHP: '₱', SGD: 'S$', KRW: '₩', TWD: 'NT$',
-        THB: '฿', VND: '₫', BDT: '৳', PKR: 'Rs', LKR: 'Rs', NPR: 'Rs',
-        MMK: 'K', KZT: '₸', UZS: 'so’m', MNT: '₮', KHR: '៛', LAK: '₭',
-        MOP: 'MOP$', MVR: '.ރ', BTN: 'Nu.', BND: 'B$', TLS: 'US$', YER: '﷼'
-    };
+        let amount = parseFloat(el.innerText);
+        if (!isNaN(amount)) {
+            decimals = parseInt(decimals);
+            if (!isNaN(decimals)) {
+                amount = amount.toFixed(decimals);
+            }
 
-    const parsedAmount = parseFloat(el.textContent.trim());
-    const parsedDecimals = parseInt(decimals);
+            format_for_humans = number_format.format(amount);
+        }
+        else {
+            //this will return only the currency symbol if expression is empty or not a number
+            format_for_humans = number_format.formatToParts(0).map((p) => p.value)[0];
+        }
 
-    const formatter = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency,
-        currencyDisplay: expression || 'symbol',
-        ...(isNaN(parsedDecimals) ? {} : {
-            minimumFractionDigits: parsedDecimals,
-            maximumFractionDigits: parsedDecimals
-        })
+        if (format_for_humans.includes('ZAR')) {
+            format_for_humans = format_for_humans.replace('ZAR', 'R');
+        }
+
+        if (format_for_humans.includes('TRY')) {
+            format_for_humans = format_for_humans.replace('TRY', '₺');
+        }
+
+        if (format_for_humans.includes('HRK')) {
+            format_for_humans = format_for_humans.replace('HRK', 'kn');
+        }
+
+        if (format_for_humans.includes('DKK')) {
+            format_for_humans = format_for_humans.replace('DKK', 'kr');
+        }
+
+        if (format_for_humans.includes('BGN')) {
+            format_for_humans = format_for_humans.replace('BGN', 'лв');
+        }
+
+        if (format_for_humans.includes('AED')) {
+            format_for_humans = format_for_humans.replace('AED', 'د.إ');
+        }
+
+        el.innerText = format_for_humans;
     });
-
-    let formatted = isNaN(parsedAmount)
-        ? (formatter.formatToParts(0).find(p => p.type === 'currency')?.value || '')
-        : formatter.format(parsedAmount);
-
-    if (currencyOverrides[currency]) {
-        formatted = formatted.replace(currency, currencyOverrides[currency]);
-    }
-
-    el.textContent = formatted;
-});
+}
