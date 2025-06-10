@@ -1,51 +1,95 @@
 export default function (Alpine) {
-    Alpine.directive('money', (el, {modifiers, expression}, {cleanup}) => {
-        let format_for_humans = '',
-            [locale, currency, decimals] = modifiers || ['en', 'EUR', null],
-            number_format = new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: currency,
-                currencyDisplay: expression || 'symbol'
+    Alpine.directive('money', (el, { modifiers, expression }, { evaluateLater, effect }) => {
+        let [locale = 'en', currency = 'EUR', decimals] = modifiers || [];
+
+        const currencyOverrides = {
+            // Your original overrides
+            ZAR: 'R',       // South African Rand
+            TRY: '₺',       // Turkish Lira
+            HRK: 'kn',      // Croatian Kuna
+            DKK: 'kr',      // Danish Krone
+            BGN: 'лв',      // Bulgarian Lev
+            AED: 'د.إ',     // UAE Dirham
+
+            // Russia & Eastern Europe
+            RUB: '₽',       // Russian Ruble
+            UAH: '₴',       // Ukrainian Hryvnia
+
+            // Asia-Pacific & Australia
+            JPY: '¥',       // Japanese Yen
+            AUD: 'A$',      // Australian Dollar
+            CNY: '¥',       // Chinese Yuan
+            INR: '₹',       // Indian Rupee
+            IDR: 'Rp',      // Indonesian Rupiah
+            MYR: 'RM',      // Malaysian Ringgit
+            PHP: '₱',       // Philippine Peso
+            SGD: 'S$',      // Singapore Dollar
+            KRW: '₩',       // South Korean Won
+            TWD: 'NT$',     // New Taiwan Dollar
+            THB: '฿',       // Thai Baht
+            VND: '₫',       // Vietnamese Đồng
+            BDT: '৳',       // Bangladeshi Taka
+            PKR: 'Rs',      // Pakistani Rupee
+            LKR: 'Rs',      // Sri Lankan Rupee
+            NPR: 'Rs',      // Nepalese Rupee
+            MMK: 'K',       // Myanmar Kyat
+            KZT: '₸',       // Kazakhstani Tenge
+            UZS: 'so’m',    // Uzbekistani Som
+            MNT: '₮',       // Mongolian Tögrög
+            KHR: '៛',       // Cambodian Riel
+            LAK: '₭',       // Laotian Kip
+            MOP: 'MOP$',    // Macanese Pataca
+            MVR: '.ރ',      // Maldivian Rufiyaa
+            BTN: 'Nu.',     // Bhutanese Ngultrum
+            BND: 'B$',      // Brunei Dollar
+            TLS: 'US$',     // Timor-Leste (uses US Dollar)
+            YER: '﷼'        // Yemeni Rial
+        };
+
+        const evaluateDisplay = evaluateLater(expression || "'symbol'");
+
+        effect(() => {
+            const raw = el.textContent.trim();
+            let amount = parseFloat(raw);
+
+            evaluateDisplay((currencyDisplay) => {
+                let formatted = '';
+                let formatterOptions = {
+                    style: 'currency',
+                    currency,
+                    currencyDisplay: currencyDisplay || 'symbol',
+                };
+
+                const parsedDecimals = parseInt(decimals);
+
+                if (!isNaN(parsedDecimals)) {
+                    formatterOptions.minimumFractionDigits = parsedDecimals;
+                    formatterOptions.maximumFractionDigits = parsedDecimals;
+                }
+
+                const formatter = new Intl.NumberFormat(locale, formatterOptions);
+
+                if (!isNaN(amount)) {
+                    let formattedAmount = amount;
+
+                    if (!isNaN(parsedDecimals)) {
+                        formattedAmount = parseFloat(amount.toFixed(parsedDecimals));
+                    }
+
+                    formatted = formatter.format(formattedAmount);
+                } else {
+                    const symbolPart = formatter.formatToParts(0).find(p => p.type === 'currency');
+                    formatted = symbolPart?.value || '';
+                }
+
+                Object.entries(currencyOverrides).forEach(([code, symbol]) => {
+                    if (formatted.includes(code)) {
+                        formatted = formatted.replace(code, symbol);
+                    }
+                });
+
+                el.textContent = formatted;
             });
-
-        let amount = parseFloat(el.innerText);
-        if (!isNaN(amount)) {
-            decimals = parseInt(decimals);
-            if (!isNaN(decimals)) {
-                amount = amount.toFixed(decimals);
-            }
-
-            format_for_humans = number_format.format(amount);
-        }
-        else {
-            //this will return only the currency symbol if expression is empty or not a number
-            format_for_humans = number_format.formatToParts(0).map((p) => p.value)[0];
-        }
-
-        if (format_for_humans.includes('ZAR')) {
-            format_for_humans = format_for_humans.replace('ZAR', 'R');
-        }
-
-        if (format_for_humans.includes('TRY')) {
-            format_for_humans = format_for_humans.replace('TRY', '₺');
-        }
-
-        if (format_for_humans.includes('HRK')) {
-            format_for_humans = format_for_humans.replace('HRK', 'kn');
-        }
-
-        if (format_for_humans.includes('DKK')) {
-            format_for_humans = format_for_humans.replace('DKK', 'kr');
-        }
-
-        if (format_for_humans.includes('BGN')) {
-            format_for_humans = format_for_humans.replace('BGN', 'лв');
-        }
-
-        if (format_for_humans.includes('AED')) {
-            format_for_humans = format_for_humans.replace('AED', 'د.إ');
-        }
-
-        el.innerText = format_for_humans;
+        });
     });
 }
