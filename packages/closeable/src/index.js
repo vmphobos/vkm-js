@@ -27,7 +27,7 @@ export default function (Alpine) {
         const button = document.createElement('button');
         button.id = `closeable-${el.id}`;
         button.type = 'button';
-        button.className = 'absolute top-3 right-1.5 flex items-center justify-center transition-all w-8 h-8 rounded-md text-inherit active:bg-dark/10 hover:bg-dark/5 dark:hover:bg-white/5 shadow-none!';
+        button.className = 'absolute top-3 right-1.5 flex items-center justify-center transition-all w-8 h-8 rounded-md text-inherit active:bg-dark/10 hover:bg-dark/5 dark:hover:bg-white/5 shadow-none! cursor-pointer';
         button.innerHTML = getIcon();
 
         el.appendChild(button);
