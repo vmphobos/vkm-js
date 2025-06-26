@@ -46,7 +46,7 @@ let repo = {
         console.log(chalk.yellow('No changes detected, skipping commit and push.'));
     }
 
-    if (versionChanged) {
+    if (!versionChanged) {
         console.log(chalk.yellow('Version did not change, skipping tag, release, and publish steps.'));
         return;
     }
