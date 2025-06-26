@@ -1,7 +1,7 @@
 {
-  "name": "@vkm-js/tooltip",
+  "name": "@vkm-js/editor",
   "version": "1.0.0",
-  "description": "An Alpinejs tooltip.",
+  "description": "An Alpinejs content editor plugin.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
     "type": "git",
@@ -17,11 +17,11 @@
     "alpinejs": "^3.0.0"
   },
   "keywords": [
-    "Tooltip",
+    "Modal",
+    "vkm-js",
     "Alpine",
     "Alpine JS",
     "Plugin",
-    "Javascript",
-    "vkm-js"
+    "Javascript"
   ]
 }

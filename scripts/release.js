@@ -18,7 +18,7 @@ let packages = [
     'money',
     'popover',
     'tooltip',
-    // Add more packages here
+    'editor',
 ];
 
 let repo = {
