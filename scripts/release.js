@@ -131,7 +131,7 @@ function commitAndTagVersion() {
 
 function pushToGitHub() {
     console.log(chalk.yellow('📤 Pushing to GitHub...'));
-    execSync(`git push origin ${repo.branch} --tags`, { stdio: 'inherit' });
+    execSync(`git push origin ${repo.branch} --tags --force`, { stdio: 'inherit' });
 }
 
 // Helper to promisify runFromPackage, assuming it uses exec under the hood (you may need to adjust based on your utils)
