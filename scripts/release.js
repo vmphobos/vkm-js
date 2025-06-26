@@ -46,7 +46,7 @@ let repo = {
         console.log(chalk.yellow('No changes detected, skipping commit and push.'));
     }
 
-    if (!versionChanged) {
+    if (versionChanged) {
         console.log(chalk.yellow('Version did not change, skipping tag, release, and publish steps.'));
         return;
     }
@@ -131,7 +131,7 @@ function commitAndTagVersion() {
 
 function pushToGitHub() {
     console.log(chalk.yellow('📤 Pushing to GitHub...'));
-    execSync(`git push origin ${repo.branch} --tags --force`, { stdio: 'inherit' });
+    execSync(`git push origin ${repo.branch} --tags`, { stdio: 'inherit' });
 }
 
 // Helper to promisify runFromPackage, assuming it uses exec under the hood (you may need to adjust based on your utils)
