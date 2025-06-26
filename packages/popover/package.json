@@ -1,6 +1,6 @@
 {
   "name": "@vkm-js/popover",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "An Alpinejs plugin to add a popover on any element.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
