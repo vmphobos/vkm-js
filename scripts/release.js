@@ -19,6 +19,7 @@ let packages = [
     'popover',
     'tooltip',
     'editor',
+    'animate',
 ];
 
 let repo = {

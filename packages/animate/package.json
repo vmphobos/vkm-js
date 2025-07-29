@@ -1,11 +1,11 @@
 {
-  "name": "@vkm-js/dropdown",
+  "name": "@vkm-js/animate",
   "version": "1.0.6",
-  "description": "An Alpinejs plugin that creates a beautiful and customizable dropdown.",
+  "description": "An Alpinejs to animate things with Intersection Observer.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vmphobos/vkm-js.git"
+    "url": "git+https://github.com/vmphobos/vkm-js.git"
   },
   "author": "Vasilis Milopoulos",
   "license": "MIT",
@@ -17,11 +17,12 @@
     "alpinejs": "^3.0.0"
   },
   "keywords": [
-    "Dropdown",
-    "vkm-js",
+    "Animations",
+    "Laravel",
     "Alpine",
     "Alpine JS",
     "Plugin",
-    "Javascript"
+    "Javascript",
+    "vkm-js"
   ]
 }

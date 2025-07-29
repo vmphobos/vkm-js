@@ -294,7 +294,7 @@ export default function (Alpine) {
             url: '',
             path: '',
             width: 200,
-            height: 200,
+            height: 'auto',
             border: 0,
             borderColor: '#000',
             radius: 0,
@@ -302,13 +302,13 @@ export default function (Alpine) {
             selectedImage: null,
             alt: '',
             popup: null,
-            constraint: true, // Whether width and height should be the same
+            constraint: false, // Whether width and height should be the same
 
             reset() {
                 this.url = '';
                 this.path = '';
                 this.width = 200;
-                this.height = 200;
+                this.height = 'auto';
                 this.border = 0;
                 this.borderColor = '#000';
                 this.radius = 0;
@@ -371,6 +371,27 @@ export default function (Alpine) {
                 this.reset();
             },
 
+            insertFile(url) {
+                if (!this.lastSelection) return;
+                let input = prompt("Please enter a title for the link:", "");
+
+                if (input == null) {
+                    input = url;
+                }
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.textContent = input;
+                link.setAttribute("style", "color: #007bff; text-decoration: underline; font-weight: bold; transition: color 0.2s ease-in-out;");
+                this.lastSelection.insertNode(link);
+                this.lastSelection = null;
+
+                editorData.save();
+
+                this.reset();
+            },
+
             updateImageSrc(value) {
                 if (this.selectedImage) {
                     this.selectedImage.setAttribute('src', value);
@@ -405,6 +426,7 @@ export default function (Alpine) {
 
                 this.selectedImage = image;
                 this.selectedImage.classList.add('border-2', 'border-blue-500');
+                this.url = this.selectedImage.getAttribute('src') || '';
                 this.alt = this.selectedImage.getAttribute('alt') || '';
 
                 this.renderPopup();
@@ -421,7 +443,7 @@ export default function (Alpine) {
             renderPopup() {
                 let popup = document.createElement('div');
                 popup.id = 'image-popup';
-                popup.className = 'absolute bg-white border shadow-lg p-3 rounded w-48';
+                popup.className = 'absolute bg-white border border-gray-100 shadow-lg p-3 rounded min-w-48 w-full max-w-96';
                 popup.innerHTML = `
                 <label class="block my-2 text-sm font-medium">Url:</label>
                 <input type="text" value="${this.url}" class="border border-gray-200 rounded p-1 w-full" id="url-input">
