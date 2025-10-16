@@ -20,6 +20,7 @@ let packages = [
     'tooltip',
     'editor',
     'animate',
+    'datepicker',
 ];
 
 let repo = {

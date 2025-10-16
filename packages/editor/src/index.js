@@ -291,27 +291,26 @@ export default function (Alpine) {
         return {
             lastSelection: null,
             showModal: false,
-            url: '',
-            path: '',
-            width: 200,
-            height: 'auto',
-            border: 0,
-            borderColor: '#000',
-            radius: 0,
-            alignment: "none",
-            selectedImage: null,
+            src: '',
             alt: '',
+            width: 200,
+            height: '',
+            borderWidth: 0,
+            borderColor: '#000',
+            borderRadius: 0,
+            float: "none",
+            selectedImage: null,
             popup: null,
             constraint: false, // Whether width and height should be the same
 
             reset() {
-                this.url = '';
-                this.path = '';
+                this.src = '';
+                this.alt = '';
                 this.width = 200;
-                this.height = 'auto';
-                this.border = 0;
+                this.height = '';
+                this.borderWidth = 0;
                 this.borderColor = '#000';
-                this.radius = 0;
+                this.borderRadius = 0;
             },
             changeConstraint() {
                 this.constraint = !this.constraint;  // Toggle the constraint
@@ -345,25 +344,47 @@ export default function (Alpine) {
             },
 
             insertImage() {
-                if (!this.lastSelection) return;
+                if (!this.lastSelection && !this.selectedImage) return;
 
-                const img = document.createElement('img');
-                img.src = this.url;
-                img.style.width = this.width + "px";
-                img.style.height = this.height + "px";
-                if (this.border) {
-                    img.style.border = this.border + "px solid black";
+                if (this.selectedImage) {
+                    this.selectedImage.src = this.src;
+                    this.selectedImage.alt = this.alt;
+                    this.selectedImage.style.width = this.width + "px";
+                    this.selectedImage.style.height = this.height + "px";
+                    this.selectedImage.style.float = this.float;
+                    if (this.borderWidth) {
+                         this.selectedImage.style.border = this.borderWidth + "px solid " + this.borderColor;
+                    }
+                    if (this.borderRadius) {
+                         this.selectedImage.style.borderRadius = this.borderRadius + "px";
+                    }
+                     this.selectedImage.style.display = "inline-block";
+                     this.selectedImage.draggable = true;
+                     this.selectedImage.style.cursor = "grab";
                 }
-                if (this.radius) {
-                    img.style.borderRadius = this.radius + "px";
-                }
-                img.style.borderColor = this.borderColor;
-                img.style.display = "inline-block";
-                img.draggable = true;
-                img.style.cursor = "grab";
+                else {
+                    const img = document.createElement('img');
+                    img.src = this.src;
+                    img.alt = this.alt;
+                    img.style.width = this.width + "px";
+                    img.style.height = this.height + "px";
+                    img.style.float = this.float;
+                    if (this.borderWidth) {
+                        img.style.border = this.borderWidth + "px solid " + this.borderColor;
+                    }
 
-                this.lastSelection.insertNode(img);
-                this.lastSelection = null;
+                    if (this.borderRadius) {
+                        img.style.borderRadius = this.borderRadius + "px";
+                    }
+
+                    img.style.display = "inline-block";
+                    img.draggable = true;
+                    img.style.cursor = "grab";
+
+                    this.lastSelection.insertNode(img);
+                    this.lastSelection = null;
+                }
+
                 this.showModal = false;
 
                 editorData.save();
@@ -420,16 +441,22 @@ export default function (Alpine) {
 
             selectImage(image) {
                 if (this.selectedImage) {
-                    this.selectedImage.classList.remove('border-2', 'border-blue-500');
-                    document.querySelector('#image-popup')?.remove();
+                    // this.selectedImage.classList.remove('border-2', 'border-orange-400');
                 }
 
                 this.selectedImage = image;
-                this.selectedImage.classList.add('border-2', 'border-blue-500');
-                this.url = this.selectedImage.getAttribute('src') || '';
-                this.alt = this.selectedImage.getAttribute('alt') || '';
+                // this.selectedImage.classList.add('border-2', 'border-orange-400');
+                this.src = this.selectedImage.src;
+                this.alt = this.selectedImage.alt;
+                this.width = this.selectedImage.width;
+                this.height = this.selectedImage.height;
+                this.float = getComputedStyle(this.selectedImage).float;
+                this.borderWidth =  parseFloat(getComputedStyle(this.selectedImage).borderWidth);
+                this.borderColor = getComputedStyle(this.selectedImage).borderColor;
+                this.borderRadius =  parseFloat(getComputedStyle(this.selectedImage).borderRadius);
+                console.log(getComputedStyle(this.selectedImage).borderRadius);
 
-                this.renderPopup();
+                this.showModal = true;
             },
 
             deselectImage() {
@@ -438,61 +465,6 @@ export default function (Alpine) {
                     document.querySelector('#image-popup')?.remove();
                     this.selectedImage = null;
                 }
-            },
-
-            renderPopup() {
-                let popup = document.createElement('div');
-                popup.id = 'image-popup';
-                popup.className = 'absolute bg-white border border-gray-100 shadow-lg p-3 rounded min-w-48 w-full max-w-96';
-                popup.innerHTML = `
-                <label class="block my-2 text-sm font-medium">Url:</label>
-                <input type="text" value="${this.url}" class="border border-gray-200 rounded p-1 w-full" id="url-input">
-                <label class="block my-2 text-sm font-medium">Alt Text:</label>
-                <input type="text" value="${this.alt}" class="border border-gray-200 rounded p-1 w-full" id="alt-text-input">
-
-                <div class="block text-sm font-medium my-2">Alignment:</div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" data-align="left" class="text-xs bg-gray-200 px-2 py-1 rounded hover:opacity-80 hover:cursor-pointer">Left</button>
-                    <button type="button" data-align="center" class="text-xs bg-gray-200 px-2 py-1 rounded hover:opacity-80 hover:cursor-pointer">Center</button>
-                    <button type="button" data-align="right" class="text-xs bg-gray-200 px-2 py-1 rounded hover:opacity-80 hover:cursor-pointer">Right</button>
-                    <div type="button" class="col-span-3 text-xs mt-2 px-2 py-1 text-center bg-red-400 font-medium text-white rounded hover:opacity-80 hover:cursor-pointer" data-remove>Remove</div>
-                </div>
-            `;
-                document.body.appendChild(popup);
-
-                // Positioning
-                let rect = this.selectedImage.getBoundingClientRect();
-                popup.style.top = `${rect.bottom + window.scrollY}px`;
-                popup.style.left = `${rect.left + window.scrollX}px`;
-
-                // Add input event listener manually
-                popup.querySelector('#url-input').addEventListener('input', (e) => {
-                    this.updateImageSrc(e.target.value);
-                });
-
-                // Add input event listener manually
-                popup.querySelector('#alt-text-input').addEventListener('input', (e) => {
-                    this.updateAltText(e.target.value);
-                });
-
-                //Remove image
-                popup.querySelector('[data-remove]').addEventListener('click', (e) => {
-                    this.selectedImage.remove();
-                    popup.remove();
-                });
-
-                // Add alignment button handlers
-                popup.querySelectorAll('[data-align]').forEach(button => {
-                    button.addEventListener('click', () => {
-                        this.alignImage(button.getAttribute('data-align'));
-                        // Re-Positioning
-                        let rect = this.selectedImage.getBoundingClientRect();
-                        popup.style.top = `${rect.bottom + window.scrollY}px`;
-                        popup.style.left = `${rect.left + window.scrollX}px`;
-                    });
-                });
-
-                this.popup = popup;
             },
 
             alignImage(position) {
@@ -645,10 +617,39 @@ export default function (Alpine) {
                 const anchorNode = selection.anchorNode;
                 const anchorOffset = selection.anchorOffset;
 
-                // Perform indent
+                // Perform non margin indent if contenteditable
+                if (block.getAttribute('contenteditable')) {
+                    const originalRange = range.cloneRange();  // Save original caret position
+
+                    // Move range to the beginning of the block
+                    const startOfBlock = block.firstChild || block;  // First child or block itself if empty
+
+                    // Create a new range at the start of the block
+                    const startRange = document.createRange();
+                    if (startOfBlock.nodeType === Node.TEXT_NODE) {
+                        startRange.setStart(startOfBlock, 0);
+                    } else {
+                        // If firstChild is element node, put start before it
+                        startRange.setStartBefore(startOfBlock);
+                    }
+                    startRange.collapse(true);
+
+                    // Create text node with 4 non-breaking spaces
+                    const nbspTextNode = document.createTextNode('\u00A0\u00A0\u00A0\u00A0');
+
+                    // Insert nbspTextNode at the start of the block
+                    startRange.insertNode(nbspTextNode);
+
+                    // Now restore caret to original position
+                    selection.removeAllRanges();
+                    selection.addRange(originalRange);
+
+                    return;  // Exit the function
+                }
+
                 const computedStyle = window.getComputedStyle(block);
                 const currentMargin = parseInt(computedStyle.marginLeft) || 0;
-                const delta = increase ? 40 : -40;
+                const delta = increase ? 20 : -20;
                 const newMargin = Math.max(0, currentMargin + delta);
 
                 block.style.marginLeft = `${newMargin}px`;

@@ -1,0 +1,27 @@
+{
+  "name": "@vkm-js/datepicker",
+  "version": "1.0.7",
+  "description": "An Alpinejs datepicker.",
+  "homepage": "https://github.com/vmphobos",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vmphobos/vkm-js.git"
+  },
+  "author": "Vasilis Milopoulos",
+  "license": "MIT",
+  "main": "dist/module.cjs.js",
+  "module": "dist/module.esm.js",
+  "unpkg": "build/cdn.min.js",
+  "dependencies": {},
+  "peerDependencies": {
+    "alpinejs": "^3.0.0"
+  },
+  "keywords": [
+    "Datepicker",
+    "Alpine",
+    "Alpine JS",
+    "Plugin",
+    "Javascript",
+    "vkm-js"
+  ]
+}
