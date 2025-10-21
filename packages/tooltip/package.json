@@ -1,6 +1,6 @@
 {
   "name": "@vkm-js/tooltip",
-  "version": "v1.0.8",
+  "version": "1.0.9",
   "description": "An Alpinejs tooltip.",
   "homepage": "https://github.com/vmphobos",
   "repository": {
