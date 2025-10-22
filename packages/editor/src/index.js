@@ -166,15 +166,24 @@ export default function (Alpine) {
             },
 
             openColorPicker(el, action) {
+                if (document.getElementById('color-picker')) {
+                    return;
+                }
+
                 // When a button is clicked, open the color picker
                 this.colorElement = el;
                 this.colorAction = action;
                 this.currentColor = window.getComputedStyle(el).backgroundColor || this.currentColor;
+                let ref = '$refs.text_picker';
+                if (action !== 'text') {
+                    ref = '$refs.bg_picker';
+                }
 
                 let pickerPopup = document.createElement('div');
                 pickerPopup.id = 'color-picker';
-                pickerPopup.className = 'absolute min-w-max p-4 bg-white rounded-md border border-gray-200 dark:bg-dark border shadow-md';
+                pickerPopup.className = 'min-w-max p-4 bg-white rounded-md border border-gray-200/50 dark:bg-black/90 border shadow-md z-10';
                 pickerPopup.setAttribute('x-on:click.outside', "if (!$event.target.closest('button')) { $el.remove() }");
+                pickerPopup.setAttribute('x-anchor', ref);
 
                 pickerPopup.innerHTML = `
                     <div class="flex items-center space-x-2">
@@ -204,6 +213,10 @@ export default function (Alpine) {
                     <!-- Add Button -->
                     <button type="button" class="mt-3 px-3 py-1 rounded-sm bg-blue-500 text-xs text-white hover:cursor-pointer hover:opacity-80" @click="colorPicker.changeColor(), document.getElementById('color-picker').remove()">
                         Apply Color
+                    </button>
+
+                    <button type="button" class="mt-3 px-3 py-1 rounded-sm bg-gray-300 text-xs text-black hover:cursor-pointer hover:opacity-80" @click="document.getElementById('color-picker').remove()">
+                        Cancel
                     </button>
                 `;
                 el.after(pickerPopup);
@@ -454,7 +467,6 @@ export default function (Alpine) {
                 this.borderWidth =  parseFloat(getComputedStyle(this.selectedImage).borderWidth);
                 this.borderColor = getComputedStyle(this.selectedImage).borderColor;
                 this.borderRadius =  parseFloat(getComputedStyle(this.selectedImage).borderRadius);
-                console.log(getComputedStyle(this.selectedImage).borderRadius);
 
                 this.showModal = true;
             },
@@ -493,7 +505,7 @@ export default function (Alpine) {
                 }
             },
 
-            // URL validation function (basic)
+            // URL validation
             isValidImageUrl(url) {
                 const regex = /(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png|bmp|webp)/i;
                 return regex.test(url);  // Validate image URL
@@ -978,17 +990,44 @@ export default function (Alpine) {
 
         init() {
             //initialize functions
-            this.colorPicker = colorPicker(this);
-            this.action = createActions(this);
-            this.link = createLink(this);
-            this.image = editImage(this);
+            this.colorPicker = Alpine.reactive(colorPicker(this));
+            this.action = Alpine.reactive(createActions(this));
+            this.link = Alpine.reactive(createLink(this));
+            this.image = Alpine.reactive(editImage(this));
 
             this.link.init(this.editor);
 
-            //bind event listeners
-            this.editor.addEventListener('click', (event) => this.image.handleClick(event));
-            this.editor.addEventListener('dragstart', (event) => this.image.handleDragStart(event));
-            this.editor.addEventListener('dragend', (event) => this.image.handleDragEnd(event));
+            window.addEventListener('editImage', this.editImage.bind(this));
+            window.addEventListener('insertImage', this.insertImage.bind(this));
+
+            this.attachEditorImageListeners();
+        },
+
+        editImage(event) {
+            const data = event.detail;
+            this.image.src = data.url;
+            this.image.path = data.path;
+            this.image.showModal = true;
+        },
+
+        insertImage(event) {
+            this.image.insertImage();
+            this.image.showModal = false;
+        },
+
+        attachEditorImageListeners() {
+            this.editor.addEventListener('click', (event) => {
+                this.image.handleClick(event);
+            });
+
+            this.editor.addEventListener('dragstart', (event) => {
+                this.image.handleDragStart(event);
+            });
+
+            this.editor.addEventListener('dragend', (event) => {
+                this.image.handleDragEnd(event);
+            });
+
             this.editor.addEventListener('keydown', (event) => {
                 if (event.key === 'Tab') {
                     event.preventDefault();

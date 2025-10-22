@@ -51,15 +51,11 @@ export default function (Alpine) {
             //reset input as valid
             this.isValid(event);
 
-            console.warn('Validating ' + name);
             validation_rules = this.rules[name];
             if (this.ruleHasAsterisk(name)) {
                 let asterisk_name = name.replace(/[0-9]/g, "*");
-                console.warn('Changed name with asterisk: ' + asterisk_name);
                 validation_rules = this.rules[asterisk_name];
             }
-
-            console.log(this.rules);
 
             if (!validation_rules) {
                 //when no rules then always mark field as valid
@@ -81,7 +77,6 @@ export default function (Alpine) {
             //start validation checks for each rule
             for (let i = 0; i < validation_rules.length; i++) {
                 let rule_title = validation_rules[i];
-                console.info('...current rule:' + rule_title);
 
                 //validate only when rule is string and not an object and then break on first invalid check
                 if (typeof rule_title === 'string') {

@@ -38,8 +38,8 @@ export default function (Alpine) {
         //Element on click via data-toggle
         if (isHoverable) {
             triggerEl.setAttribute('x-on:mouseover', 'open = true');
-            el.setAttribute('x-on:mouseenter', "console.log('mousenter'),exitHover ? clearTimeout(exitHover) : true");
-            el.setAttribute('x-on:mouseleave.prevent', "console.log('mouseleave'), exitHover = setTimeout(() => { open = false }, 50)");
+            el.setAttribute('x-on:mouseenter', "exitHover ? clearTimeout(exitHover) : true");
+            el.setAttribute('x-on:mouseleave.prevent', "exitHover = setTimeout(() => { open = false }, 50)");
         }
         else {
             triggerEl.setAttribute('x-on:click', 'toggle()');

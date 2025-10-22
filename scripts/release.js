@@ -12,15 +12,15 @@ if (!version) return exitWith('❌ You must pass a version number: npm run relea
 // if (!/^\d+\.\d+\.\d+$/.test(version)) return exitWith(`❌ Invalid version: ${version}`);
 
 let packages = [
+    'animate',
     'closeable',
     'dropdown',
+    'editor',
     'modal',
     'money',
     'popover',
     'tooltip',
-    'editor',
-    'animate',
-    'datepicker',
+    'validation',
 ];
 
 let repo = {
