@@ -1,6 +1,6 @@
 //DO NOT ALTER ANYTHING IN HERE!
 export default function (Alpine) {
-    function colorPicker(editorData) {
+    function colorPickerModule(editorData) {
         return {
             open: false,               // Color picker visibility
             currentColor: '#000000',  // Initial color
@@ -161,7 +161,7 @@ export default function (Alpine) {
                     '#525252',
                     '#464646',
                     '#3d3d3d',
-                    '#000',
+                    '#000000',
                 ],
             },
 
@@ -299,49 +299,117 @@ export default function (Alpine) {
         };
     }
 
-
-    function editImage(editorData) {
+    function imageModule(editorData) {
         return {
+            // Core state
             lastSelection: null,
             showModal: false,
             src: '',
             alt: '',
+            originalWidth: 200,
+            originalHeight: 0,
+            aspectRatio: 1,
             width: 200,
             height: '',
+            opacity: 1,
             borderWidth: 0,
             borderColor: '#000',
             borderRadius: 0,
             float: "none",
             selectedImage: null,
-            popup: null,
-            constraint: false, // Whether width and height should be the same
+            constraint: true,
+            range: 1,
 
+            setRange(x) {
+                this.range = x;
+            },
+
+            init() {
+                if (!this.lastSelection) {
+                    this.storeSelection();
+                }
+
+                if (!this.src) return;
+
+                // Only calculate if width or height is missing
+                if (this.width && !this.height) {
+                    const img = new Image();
+                    img.onload = () => this.calculateDimensions(img);
+                    img.src = this.src;
+                }
+            },
+
+            storeSelection() {
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) this.lastSelection = selection.getRangeAt(0);
+            },
+
+            closeModal() {
+                this.reset();
+                this.showModal = false;
+            },
+
+            //reset image modal
             reset() {
                 this.src = '';
                 this.alt = '';
+                this.originalWidth = 200;
+                this.originalHeight = 0;
+                this.aspectRatio = 1;
                 this.width = 200;
                 this.height = '';
+                this.opacity = 1;
                 this.borderWidth = 0;
                 this.borderColor = '#000';
                 this.borderRadius = 0;
+                this.float = 'none';
+                this.selectedImage = null;
+                this.constraint = true;
+                this.range = 1;
+                this.lastSelection = null;
+                this.showModal = false;
             },
+
+            calculateDimensions(img) {
+                // Store original dimensions & aspect ratio if not set
+                if (!this.originalWidth || !this.originalHeight) {
+                    this.originalWidth = img.naturalWidth;
+                    this.originalHeight = img.naturalHeight;
+                    this.aspectRatio = img.naturalWidth / img.naturalHeight;
+                }
+
+                // Set width if not already set
+                if (!this.width) {
+                    this.width = this.originalWidth;
+                }
+
+                // Set height based on width & aspect ratio if not already set
+                if (!this.height) {
+                    this.height = Math.round(this.width / this.aspectRatio);
+                }
+            },
+
             changeConstraint() {
-                this.constraint = !this.constraint;  // Toggle the constraint
-                if (this.constraint) {
-                    this.height = this.width;  // Keep width and height the same
+                this.constraint = !this.constraint;
+
+                if (this.constraint && this.width && this.height) {
+                    this.aspectRatio = this.width / this.height;
                 }
             },
 
             changeImageDimensions(type, value) {
-                const isWidth = type === 'w';
-                if (!this.constraint) {
-                    if (isWidth) {
-                        this.width = value;
-                    } else {
-                        this.height = value;
+                value = parseInt(value);
+
+                if (type === 'w') {
+                    this.width = value;
+                    if (this.constraint) {
+                        this.height = Math.round(this.width / this.aspectRatio);
                     }
-                } else {
-                    this.width = this.height = value;
+                } else if (type === 'h') {
+                    this.height = value;
+                    if (this.constraint) {
+                        this.width = Math.round(this.height * this.aspectRatio);
+                    }
                 }
             },
 
@@ -349,171 +417,144 @@ export default function (Alpine) {
                 this.borderColor = value;
             },
 
-            storeSelection() {
-                const selection = window.getSelection();
-                if (selection.rangeCount > 0) {
-                    this.lastSelection = selection.getRangeAt(0); // Store caret position
-                }
-            },
-
+            // --- Insert / Update Image ---
             insertImage() {
                 if (!this.lastSelection && !this.selectedImage) return;
 
-                if (this.selectedImage) {
-                    this.selectedImage.src = this.src;
-                    this.selectedImage.alt = this.alt;
-                    this.selectedImage.style.width = this.width + "px";
-                    this.selectedImage.style.height = this.height + "px";
-                    this.selectedImage.style.float = this.float;
-                    if (this.borderWidth) {
-                         this.selectedImage.style.border = this.borderWidth + "px solid " + this.borderColor;
-                    }
-                    if (this.borderRadius) {
-                         this.selectedImage.style.borderRadius = this.borderRadius + "px";
-                    }
-                     this.selectedImage.style.display = "inline-block";
-                     this.selectedImage.draggable = true;
-                     this.selectedImage.style.cursor = "grab";
-                }
-                else {
-                    const img = document.createElement('img');
-                    img.src = this.src;
-                    img.alt = this.alt;
-                    img.style.width = this.width + "px";
-                    img.style.height = this.height + "px";
-                    img.style.float = this.float;
-                    if (this.borderWidth) {
-                        img.style.border = this.borderWidth + "px solid " + this.borderColor;
-                    }
+                const img = this.selectedImage || document.createElement('img');
 
-                    if (this.borderRadius) {
-                        img.style.borderRadius = this.borderRadius + "px";
-                    }
+                img.src = this.src;
+                img.alt = this.alt;
+                img.style.width = this.width + 'px';
+                img.style.height = this.height + 'px';
+                img.style.float = this.float;
 
-                    img.style.display = "inline-block";
-                    img.draggable = true;
-                    img.style.cursor = "grab";
+                if (this.borderWidth) img.style.border = `${this.borderWidth}px solid ${this.borderColor}`;
+                if (this.borderRadius) img.style.borderRadius = this.borderRadius + 'px';
+                if (this.opacity) img.style.opacity = this.opacity;
 
+                img.style.display = "inline-block";
+
+                if (!this.selectedImage) {
                     this.lastSelection.insertNode(img);
                     this.lastSelection = null;
                 }
 
-                this.showModal = false;
-
                 editorData.save();
-
-                this.reset();
+                this.closeModal();
             },
 
             insertFile(url) {
                 if (!this.lastSelection) return;
-                let input = prompt("Please enter a title for the link:", "");
-
-                if (input == null) {
-                    input = url;
-                }
+                let input = prompt("Enter a title for the link:", "") || url;
 
                 const link = document.createElement('a');
                 link.href = url;
                 link.target = '_blank';
                 link.textContent = input;
-                link.setAttribute("style", "color: #007bff; text-decoration: underline; font-weight: bold; transition: color 0.2s ease-in-out;");
+                link.style.cssText = "color: #007bff; text-decoration: underline; font-weight: bold; transition: color 0.2s ease-in-out;";
+
                 this.lastSelection.insertNode(link);
                 this.lastSelection = null;
 
                 editorData.save();
-
-                this.reset();
+                this.closeModal();
             },
 
             updateImageSrc(value) {
                 if (this.selectedImage) {
-                    this.selectedImage.setAttribute('src', value);
+                    this.selectedImage.src = value;
                     editorData.save();
                 }
             },
 
             updateAltText(value) {
                 if (this.selectedImage) {
-                    this.selectedImage.setAttribute('alt', value);
+                    this.selectedImage.alt = value;
                     editorData.save();
                 }
             },
 
-            handleClick(event) {
-                if (event.target.closest('#image-popup')) {
-                    return;
-                }
-
-                if (event.target.tagName === 'IMG') {
-                    this.selectImage(event.target);
-                } else {
-                    this.deselectImage();
-                }
-            },
-
+            // --- Selection & Modal ---
             selectImage(image) {
-                if (this.selectedImage) {
-                    // this.selectedImage.classList.remove('border-2', 'border-orange-400');
+                this.selectedImage = image;
+                this.src = image.src;
+                this.alt = image.alt;
+
+                // Float & border styles
+                this.float = getComputedStyle(image).float;
+                this.borderWidth = parseFloat(getComputedStyle(image).borderWidth);
+                this.borderColor = getComputedStyle(image).borderColor;
+                this.borderRadius = parseFloat(getComputedStyle(image).borderRadius);
+                this.opacity = parseFloat(getComputedStyle(image).opacity);
+
+                // Use the image's natural dimensions to calculate aspect ratio
+                if (!this.originalWidth || !this.originalHeight) {
+                    this.originalWidth = image.naturalWidth || image.width;
+                    this.originalHeight = image.naturalHeight || image.height;
+                    this.aspectRatio = this.originalWidth / this.originalHeight;
                 }
 
-                this.selectedImage = image;
-                // this.selectedImage.classList.add('border-2', 'border-orange-400');
-                this.src = this.selectedImage.src;
-                this.alt = this.selectedImage.alt;
-                this.width = this.selectedImage.width;
-                this.height = this.selectedImage.height;
-                this.float = getComputedStyle(this.selectedImage).float;
-                this.borderWidth =  parseFloat(getComputedStyle(this.selectedImage).borderWidth);
-                this.borderColor = getComputedStyle(this.selectedImage).borderColor;
-                this.borderRadius =  parseFloat(getComputedStyle(this.selectedImage).borderRadius);
+                // Preserve existing width if set, otherwise use original
+                this.width = image.width || this.width || this.originalWidth;
+
+                // Calculate height according to width & aspect ratio
+                this.height = image.height || this.height || Math.round(this.width / this.aspectRatio);
+
+                let currentAspectRatio = this.width / this.height;
+
+                // Use a small tolerance to account for floating point differences
+                const tolerance = 0.01;
+
+                if (Math.abs(this.aspectRatio - currentAspectRatio) > tolerance) {
+                    this.constraint = false;
+                } else {
+                    this.constraint = true;
+                }
 
                 this.showModal = true;
             },
 
             deselectImage() {
-                if (this.selectedImage) {
-                    this.selectedImage.classList.remove('border-2', 'border-blue-500');
-                    document.querySelector('#image-popup')?.remove();
-                    this.selectedImage = null;
-                }
+                this.selectedImage = null;
+                this.reset();
+            },
+
+            remove() {
+                this.selectedImage.remove();
+                this.closeModal();
+            },
+
+            handleClick(event) {
+                if (event.target.tagName === 'IMG') this.selectImage(event.target);
+                else this.deselectImage();
             },
 
             alignImage(position) {
-                if (this.selectedImage) {
-                    this.selectedImage.style.display = 'inline';
-                    this.selectedImage.style.margin = position === 'center' ? '0 auto' : '0';
-                    this.selectedImage.style.float = position === 'left' ? 'left' : position === 'right' ? 'right' : 'none';
-                }
-
+                if (!this.selectedImage) return;
+                this.selectedImage.style.display = 'inline';
+                this.selectedImage.style.margin = position === 'center' ? '0 auto' : '0';
+                this.selectedImage.style.float = position === 'left' ? 'left' : position === 'right' ? 'right' : 'none';
                 editorData.save();
             },
 
             handleDragStart(event) {
-                if (event.target.tagName === 'IMG') {
-                    event.target.classList.add('caret-red-500'); // Change caret color
-                    event.target.classList.add('opacity-50', 'scale-75'); // Reduce opacity and scale down image
-                    event.target.classList.add('caret-w-[4px]', 'caret-h-[20px]');
-                }
+                if (event.target.tagName !== 'IMG') return;
+                event.target.classList.add('opacity-50', 'scale-75', 'cursor-grabbing');
             },
 
             handleDragEnd(event) {
-                if (event.target.tagName === 'IMG') {
-                    event.target.classList.remove('caret-red-500'); // Reset caret color
-                    event.target.classList.remove('opacity-50', 'scale-75'); // Restore opacity and scale
-                    event.target.classList.remove('caret-w-[4px]', 'caret-h-[20px]');
-                }
+                if (event.target.tagName !== 'IMG') return;
+                event.target.classList.remove('opacity-50', 'scale-75', 'cursor-grabbing');
             },
 
-            // URL validation
             isValidImageUrl(url) {
-                const regex = /(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|jpeg|gif|png|bmp|webp)/i;
-                return regex.test(url);  // Validate image URL
+                return /(https?:\/\/.*\.(?:png|jpg|jpeg|gif|bmp|webp))/i.test(url);
             },
         };
     }
 
-    function createActions(editorData) {
+    function textActionsModule(editorData) {
         return {
             formatSelection(type, fontSize = null) {
                 const selection = window.getSelection();
@@ -853,315 +894,346 @@ export default function (Alpine) {
         };
     }
 
-    function createLink(editorData) {
+    function linkModule(editorData) {
         return {
             linkText: '',
             linkUrl: '',
             linkTarget: '_self',
             selectedLink: null,
-            range: null, // Store range globally for later insertion
+            range: null,
+            popupId: null,
+            popupEl: null,
+            toolbarButtonEl: null, // store toolbar button ref if needed
 
-            init(editorElement) {
+            init(editorElement, toolbarButtonSelector = null) {
+                this.popupId = 'link-popup-' + editorElement.id;
+                // Allow passing toolbar button selector
+                if (toolbarButtonSelector) {
+                    // Accept either an element or selector string
+                    this.toolbarButtonEl =
+                        typeof toolbarButtonSelector === 'string'
+                            ? document.querySelector(toolbarButtonSelector)
+                            : toolbarButtonSelector;
+                }
+
                 editorElement.addEventListener('mouseup', (event) => this.checkForLinkClick(event));
+
+                // Close popup on outside click
+                document.addEventListener('click', (e) => {
+                    if (
+                        this.popupEl &&
+                        !this.popupEl.contains(e.target) &&
+                        e.target !== this.toolbarButtonEl &&
+                        !e.target.closest('a')
+                    ) {
+                        this.closePopup();
+                    }
+                });
             },
 
             checkForLinkClick(event) {
                 if (event.target.tagName === 'A') {
                     this.selectedLink = event.target;
                     this.linkText = this.selectedLink.textContent;
-                    this.linkUrl = this.selectedLink.href;
-                    this.linkTarget = this.selectedLink.target;
+                    this.linkUrl = this.selectedLink.getAttribute('href') || '';
+                    this.linkTarget = this.selectedLink.getAttribute('target') || '_self';
+                    this.range = null;
 
                     this.showLinkPopup();
                     this.positionPopup(event.target);
                 }
             },
 
-            insert() {
+            showPopup(event) {
+                // If popup is already visible and triggered by button → toggle it
+                if (this.popupEl && event?.currentTarget === this.toolbarButtonEl) {
+                    this.closePopup();
+                    return;
+                }
+
                 this.selectedLink = null;
                 const selection = window.getSelection();
-                if (!selection.rangeCount) return;
-
-                this.range = selection.getRangeAt(0); // Store range for later insertion
-                this.linkText = this.range.toString() || ''; // Get selected text
-                this.linkUrl = ''; // Get selected text
+                this.range = selection.rangeCount ? selection.getRangeAt(0) : null;
+                this.linkText = this.range?.toString() || '';
+                this.linkUrl = '';
+                this.linkTarget = '_self';
 
                 this.showLinkPopup();
-                this.positionPopup(this.range);
+
+                // Position depending on trigger
+                if (event?.currentTarget === this.toolbarButtonEl) {
+                    this.positionPopup(this.toolbarButtonEl);
+                } else if (this.range) {
+                    this.positionPopup(this.range);
+                }
             },
 
             showLinkPopup() {
-                document.querySelector('#link-popup')?.remove(); // Remove existing popup
+                this.closePopup(); // remove old popup
 
-                let popup = document.createElement('div');
-                popup.id = 'link-popup';
-                popup.className = 'absolute bg-white p-4 shadow-lg border border-gray-200 rounded-sm flex flex-col w-64';
-                popup.setAttribute('x-on:click.outside', "if (!$event.target.closest('#link-popup') && !$event.target.closest('a')) { $el.remove() }");
-
+                const label_class = 'block text-xs font-medium mt-2 mb-1';
+                const input_class = 'rounded-md border border-black/5 dark:border-white/10 bg-transparent p-1 w-full text-xs h-7';
+                const popup = document.createElement('div');
+                popup.id = this.popupId;
+                popup.className = 'absolute backdrop-blur-lg bg-white/90 dark:bg-black/90 p-4 shadow-lg border border-dark/5 rounded-md flex flex-col w-64 z-50';
                 popup.innerHTML = `
-                <label class="block text-xs font-medium mb-1">Text:</label>
-                <input type="text" id="link-text" class="rounded-sm border border-gray-300 bg-transparent p-1 w-full text-sm h-7" value="${this.linkText}">
-
-                <label class="block text-xs font-medium mt-1 mb-1">URL:</label>
-                <input type="text" id="link-url" class="rounded-sm border border-gray-300 bg-transparent p-1 w-full text-sm h-7" value="${this.linkUrl}">
-
-                <label class="block text-xs font-medium mt-1 mb-1">Target:</label>
-                <select id="link-target" class="rounded-sm border border-gray-300 bg-transparent p-1 w-full text-sm h-7">
-                    <option value="_self" ${this.linkTarget === '_self' ? 'selected' : ''}>Same Window</option>
-                    <option value="_blank" ${this.linkTarget === '_blank' ? 'selected' : ''}>New Tab</option>
-                    <option value="_parent" ${this.linkTarget === '_parent' ? 'selected' : ''}>Parent Frame</option>
-                    <option value="_top" ${this.linkTarget === '_top' ? 'selected' : ''}>Top Window</option>
+                <label class="${label_class}">URL:</label>
+                <input type="text" id="link-url" class="${input_class}" value="${this.linkUrl}">
+                <label class="${label_class}">Text (Optional):</label>
+                <input type="text" id="link-text" class="${input_class}" value="${this.linkText}">
+                <label class="${label_class}">Target:</label>
+                <select id="link-target" class="${input_class} px-2">
+                    <option value="_self" ${this.linkTarget === '_self' ? 'selected' : ''}>Same Window (_self)</option>
+                    <option value="_blank" ${this.linkTarget === '_blank' ? 'selected' : ''}>New Tab (_blank)</option>
+                    <option value="_parent" ${this.linkTarget === '_parent' ? 'selected' : ''}>Parent Frame (_parent)</option>
+                    <option value="_top" ${this.linkTarget === '_top' ? 'selected' : ''}>Top Window (_top)</option>
                 </select>
 
-                <button type="button" id="insert-link-btn" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">Update</button>
+                <button type="button" id="insert-link-btn" class="mt-3 bg-blue-500 text-sm text-white px-3 py-1 rounded-md hover:cursor-pointer hover:opacity-80">Insert Link</button>
             `;
-                document.body.appendChild(popup);
 
-                // Attach event listener AFTER inserting popup into DOM
-                document.getElementById('insert-link-btn').addEventListener('click', this.insertOrUpdateLink.bind(this));
+                document.body.appendChild(popup);
+                this.popupEl = popup;
+
+                popup.querySelector('#insert-link-btn').addEventListener('click', () => this.insertOrUpdateLink());
+            },
+
+            closePopup() {
+                if (this.popupEl) {
+                    this.popupEl.remove();
+                    this.popupEl = null;
+                }
             },
 
             positionPopup(target) {
-                const popup = document.querySelector('#link-popup');
+                const popup = this.popupEl;
                 if (!popup) return;
 
-                const rect = target.getBoundingClientRect();
-                popup.style.top = `${rect.bottom + window.scrollY}px`;
-                popup.style.left = `${rect.left + window.scrollX}px`;
+                let rect;
+                if (target instanceof Range) {
+                    rect = target.getBoundingClientRect();
+                } else {
+                    rect = target.getBoundingClientRect();
+                }
+
+                const top = rect.bottom + window.scrollY + 6;
+                const left = Math.min(rect.left + window.scrollX, window.innerWidth - popup.offsetWidth - 10);
+
+                popup.style.top = `${top}px`;
+                popup.style.left = `${left}px`;
             },
 
             insertOrUpdateLink() {
-                this.linkText = document.getElementById('link-text').value;
-                this.linkUrl = document.getElementById('link-url').value;
-                this.linkTarget = document.getElementById('link-target').value;
+                const textVal = document.getElementById('link-text').value.trim();
+                let urlVal = document.getElementById('link-url').value.trim();
+                const targetVal = document.getElementById('link-target').value;
 
-                if (!this.linkUrl) return;
+                if (!urlVal) return;
 
-                // Ensure proper link formatting
-                if (!this.linkUrl.startsWith('http://') && !this.linkUrl.startsWith('https://')) {
-                    this.linkUrl = `https://${this.linkUrl}`;
+                if (!urlVal.startsWith('http://') && !urlVal.startsWith('https://')) {
+                    urlVal = `https://${urlVal}`;
                 }
 
-                if (!this.range) return;
-
-                const linkStyle = "color: #007bff; text-decoration: underline; font-weight: bold; transition: color 0.2s ease-in-out;";
+                const linkStyle = "color:#007bff;text-decoration:underline;font-weight:bold;transition:color 0.2s;";
 
                 if (this.selectedLink) {
-                    this.selectedLink.href = this.linkUrl;
-                    this.selectedLink.target = this.linkTarget;
-                    this.selectedLink.textContent = this.linkText || this.linkUrl;
+                    this.selectedLink.href = urlVal;
+                    this.selectedLink.target = targetVal;
+                    this.selectedLink.textContent = textVal || urlVal;
                     this.selectedLink.setAttribute("style", linkStyle);
-                } else {
+                } else if (this.range) {
                     const link = document.createElement('a');
-                    link.href = this.linkUrl;
-                    link.target = this.linkTarget;
-                    link.textContent = this.linkText || this.linkUrl;
+                    link.href = urlVal;
+                    link.target = targetVal;
+                    link.textContent = textVal || urlVal;
                     link.setAttribute("style", linkStyle);
-
-                    if (this.linkText) {
-                        this.range.deleteContents();
-                        this.range.insertNode(link);
-                    } else {
-                        this.range.insertNode(link);
-                    }
+                    this.range.deleteContents();
+                    this.range.insertNode(link);
                 }
 
-                document.querySelector('#link-popup')?.remove();
-
+                this.closePopup();
                 editorData.save();
             }
         };
     }
 
     Alpine.data('editor', (id, model, $wire) => ({
-        id: id,
-        editor: document.getElementById(id),
+        id,
+        model,
+        editor: null,
         wire: $wire,
-        model: model,
-        content: $wire.get(model),
+        content: null,
+
+        // Formatting states
         isBold: false,
         isItalic: false,
         isUnderline: false,
         isStrikethrough: false,
-        colorPalette: null, //Color pick functionality for text and bg
-        action: null,  // Editor Actions
-        link: null,  // Insert or update an existing link
-        image: null,  // Image manipulation and file manager
 
+        // Modules (color picker, link, image, etc.)
+        colorPalette: null,
+        action: null,
+        link: null,
+        image: { showModal: false, src: '', alt: '', width: 200, height: '', opacity: 1, borderWidth: 0, borderColor: '#000', borderRadius: 0, float: 'none', selectedImage: null },
+
+        // Initialize editor
         init() {
-            //initialize functions
-            this.colorPicker = Alpine.reactive(colorPicker(this));
-            this.action = Alpine.reactive(createActions(this));
-            this.link = Alpine.reactive(createLink(this));
-            this.image = Alpine.reactive(editImage(this));
+            this.$nextTick(() => {
+                this.editor = document.getElementById(this.id);
+                this.content = this.wire.get(this.model);
 
-            this.link.init(this.editor);
+                //Color Module
+                this.colorPicker = Alpine.reactive(colorPickerModule(this));
 
-            window.addEventListener('editImage', this.editImage.bind(this));
-            window.addEventListener('insertImage', this.insertImage.bind(this));
+                //Action Module
+                this.action = Alpine.reactive(textActionsModule(this));
 
-            this.attachEditorImageListeners();
+                //Image Module
+                this.image = Alpine.reactive(imageModule(this));
+
+                //Link Module
+                this.link = Alpine.reactive(linkModule(this));
+                this.link.init(this.editor, this.$refs.linkBtn);
+
+                // Bind events
+                window.addEventListener('editImage', e => this.openImageEditor(e));
+                window.addEventListener('insertImage', e => this.insertImage(e));
+                document.addEventListener('selectionchange', this.updateFormattingState.bind(this));
+
+                this.attachEditorListeners();
+            });
         },
 
-        editImage(event) {
+        attachEditorListeners() {
+            this.editor.addEventListener('click', e => this.image.handleClick(e));
+            this.editor.addEventListener('dragstart', e => this.image.handleDragStart(e));
+            this.editor.addEventListener('dragend', e => this.image.handleDragEnd(e));
+            this.editor.addEventListener('keydown', e => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    this.action.changeIndent(!e.shiftKey);
+                }
+            });
+
+            // Clean paste (remove unwanted formatting)
+            this.editor.addEventListener('paste', e => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            });
+        },
+
+        // Debounced save (prevent spam updates)
+        save: Alpine.debounce(function () {
+            if (this.editor) {
+                this.wire.set(this.model, this.editor.innerHTML, false);
+            }
+        }, 400),
+
+        openImageEditor(event) {
             const data = event.detail;
+            if (!this.image) return console.error('Image module not initialized');
             this.image.src = data.url;
             this.image.path = data.path;
+            // Use width/height if provided
+            if (data.width) this.image.width = data.width;
+            if (data.height) this.image.height = data.height;
+            this.image.init();
             this.image.showModal = true;
         },
 
-        insertImage(event) {
+        insertImage() {
             this.image.insertImage();
             this.image.showModal = false;
         },
 
-        attachEditorImageListeners() {
-            this.editor.addEventListener('click', (event) => {
-                this.image.handleClick(event);
-            });
-
-            this.editor.addEventListener('dragstart', (event) => {
-                this.image.handleDragStart(event);
-            });
-
-            this.editor.addEventListener('dragend', (event) => {
-                this.image.handleDragEnd(event);
-            });
-
-            this.editor.addEventListener('keydown', (event) => {
-                if (event.key === 'Tab') {
-                    event.preventDefault();
-                    this.action.changeIndent(!event.shiftKey);
-                }
-            });
-        },
-
-        save() {
-            $wire.set(this.model, this.editor.innerHTML, false)
-        },
+        // --- Formatting Management ---
 
         clearFormatting() {
-            document.execCommand('removeFormat');
-
             const selection = window.getSelection();
-            if (selection.rangeCount === 0 || selection.isCollapsed) {
-                // Get the current node where the cursor is
-                let cursorNode = selection.focusNode;
-
-                // If the cursor is inside a text node
-                if (cursorNode && cursorNode.nodeType === Node.TEXT_NODE) {
-                    let textNode = cursorNode;
-                    let textContent = textNode.textContent;
-
-                    // Find the word boundaries (you can adjust this logic for better word handling)
-                    let wordStart = 0; // Start at the beginning of the text
-                    let wordEnd = textContent.length; // End at the end of the text
-
-                    // Create a new range that selects the whole text of the node
-                    let range = document.createRange();
-                    range.setStart(textNode, wordStart);
-                    range.setEnd(textNode, wordEnd);
-
-                    // Apply the new range to the selection
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
-                else {
-                    return;
-                }
-            }
+            if (!selection.rangeCount) return;
 
             const range = selection.getRangeAt(0);
-            const selectedNode = range.cloneContents();
+            const fragment = range.cloneContents();
 
-            // Get the parent of the selected node (this will be the node surrounding the selection)
-            const parentElement = range.startContainer.parentElement;
-
-            // If the parent doesn't have the specific id (e.g., 'editor')
-            if (parentElement && parentElement.id !== this.id) {
-                // Remove all attributes and inline styles from the parent element
-                Array.from(parentElement.attributes).forEach(attr => parentElement.removeAttribute(attr.name));
-                parentElement.removeAttribute('style');
-            }
-
-            // Create a temporary div to manipulate the content
             const tempDiv = document.createElement('div');
-            tempDiv.appendChild(selectedNode);
+            tempDiv.appendChild(fragment);
 
-            // Start cleaning from the root element (the temporary div)
-            this.cleanElement(tempDiv);
+            // Sanitize HTML
+            this.sanitize(tempDiv);
 
-            // Get the cleaned HTML content as a string
-            const cleanedHtml = tempDiv.innerHTML;
-
-            // Replace the selected content with the cleaned HTML (unwrapping text inside)
+            // Replace current selection
             range.deleteContents();
+            const cleaned = document.createTextNode(tempDiv.textContent);
+            range.insertNode(cleaned);
 
-            const fragment = document.createRange().createContextualFragment(cleanedHtml);
-
-            // Insert the new HTML content at the current selection
-            range.insertNode(fragment);
-
-            // Set the cursor after the cleaned content
-            const cursorPosition = range.endContainer;
+            // Reset selection position
             selection.removeAllRanges();
             const newRange = document.createRange();
-            newRange.setStart(cursorPosition, 0);
-            newRange.setEnd(cursorPosition, 0);
+            newRange.setStartAfter(cleaned);
+            newRange.setEndAfter(cleaned);
             selection.addRange(newRange);
-
-            this.cleanEmptyTags(this.editor);
 
             this.save();
         },
 
-        cleanEmptyTags(element) {
-            // Avoid cleaning the editor itself
-            if (element.id === this.id) return;
+        // Modern, safe recursive cleaner
+        sanitize(node) {
+            if (node.nodeType === Node.TEXT_NODE) return;
 
-            // Check if the element is empty:
-            // - No text content
-            // - No child nodes
-            // - No attributes (including style)
-            if (
-                (['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'CODE'].includes(element.tagName)) &&
-                !element.textContent.trim() &&        // No text content
-                !element.hasChildNodes() &&           // No child elements
-                !element.hasAttributes() &&           // No attributes
-                !element.hasAttribute('style')        // No inline styles
-            ) {
-                // Remove the empty element from its parent
-                element.parentNode.removeChild(element);
-            } else {
-                // Recursively clean child elements
-                Array.from(element.children).forEach(child => this.cleanEmptyTags(child));
+            const allowedTags = [
+                'P', 'BR', 'H1', 'H2', 'H3', 'UL', 'OL', 'LI',
+                'STRONG', 'B', 'I', 'EM', 'U', 'IMG', 'CODE', 'PRE'
+            ];
+
+            if (!allowedTags.includes(node.tagName)) {
+                node.replaceWith(...node.childNodes);
+                return;
             }
+
+            // Remove attributes except safe ones
+            [...node.attributes].forEach(attr => {
+                if (!['src', 'alt', 'href'].includes(attr.name)) {
+                    node.removeAttribute(attr.name);
+                }
+            });
+
+            node.removeAttribute('style');
+            node.className = '';
+
+            [...node.children].forEach(child => this.sanitize(child));
         },
 
-        // Function to remove all inline styles, classes, and attributes
-        cleanElement(element) {
-            if (element.tagName === 'A') {
-                // Replace the <a> tag with its inner text
-                const textNode = document.createTextNode(element.textContent); // Get the text content of the <a> tag
-                element.parentNode.replaceChild(textNode, element); // Replace the <a> with the text node
-            }
+        // Clean up empty tags
+        cleanEmptyTags(element) {
+            if (element.id === this.id) return;
 
-            if (['B', 'I', 'U', 'STRONG', 'EM', 'UL', 'OL', 'LI'].includes(element.tagName)) {
-                // Replace the element with just its text content
-                const textNode = document.createTextNode(element.textContent);
-                element.parentNode.replaceChild(textNode, element);
-            }
+            [...element.children].forEach(child => {
+                if (
+                    ['DIV', 'P', 'H1','H2','H3','H4','H5','H6','SPAN','CODE'].includes(child.tagName) &&
+                    !child.textContent.trim() &&
+                    !child.hasChildNodes()
+                ) {
+                    child.remove();
+                } else {
+                    this.cleanEmptyTags(child);
+                }
+            });
+        },
 
-            // Remove all attributes
-            Array.from(element.attributes).forEach(attr => element.removeAttribute(attr.name));
+        // Track whether text is bold/italic/etc. for toolbar state
+        updateFormattingState() {
+            const sel = window.getSelection();
+            if (!sel.rangeCount) return;
 
-            // Remove inline styles by clearing the 'style' attribute
-            element.removeAttribute('style');
+            const parent = sel.anchorNode?.parentElement;
+            if (!parent) return;
 
-            // Recursively clean child elements
-            Array.from(element.children).forEach(child => this.cleanElement(child));
-
-            this.cleanEmptyTags(element);
-        }
+            this.isBold = document.queryCommandState('bold');
+            this.isItalic = document.queryCommandState('italic');
+            this.isUnderline = document.queryCommandState('underline');
+            this.isStrikethrough = document.queryCommandState('strikeThrough');
+        },
     }));
+
 }
