@@ -879,8 +879,7 @@ export default function (Alpine) {
 
                     range.deleteContents();
                     block.appendChild(list);
-                }
-                else {
+                } else {
                     block.replaceWith(list);
                 }
 
@@ -1074,41 +1073,63 @@ export default function (Alpine) {
         colorPalette: null,
         action: null,
         link: null,
-        image: { showModal: false, src: '', alt: '', width: 200, height: '', opacity: 1, borderWidth: 0, borderColor: '#000', borderRadius: 0, float: 'none', selectedImage: null },
+        image: {
+            showModal: false,
+            src: '',
+            alt: '',
+            width: 200,
+            height: '',
+            opacity: 1,
+            borderWidth: 0,
+            borderColor: '#000',
+            borderRadius: 0,
+            float: 'none',
+            selectedImage: null
+        },
 
-        // Initialize editor
+        // Debounced save (prevent spam updates)
+        save: Alpine.debounce(function () {
+            this.wire.set(this.model, this.editor.innerHTML, false);
+        }, 400),
+
         init() {
-            this.$nextTick(() => {
-                this.editor = document.getElementById(this.id);
-                this.content = this.wire.get(this.model);
+            this.setupEditor();
 
-                //Color Module
-                this.colorPicker = Alpine.reactive(colorPickerModule(this));
-
-                //Action Module
-                this.action = Alpine.reactive(textActionsModule(this));
-
-                //Image Module
-                this.image = Alpine.reactive(imageModule(this));
-
-                //Link Module
-                this.link = Alpine.reactive(linkModule(this));
-                this.link.init(this.editor, this.$refs.linkBtn);
-
-                // Bind events
-                window.addEventListener('editImage', e => this.openImageEditor(e));
-                window.addEventListener('insertImage', e => this.insertImage(e));
-                document.addEventListener('selectionchange', this.updateFormattingState.bind(this));
-
+            Livewire.hook('morphed', ({el, component}) => {
                 this.attachEditorListeners();
             });
         },
 
+        setupEditor() {
+            this.editor = document.getElementById(this.id);
+            this.content = this.wire.get(this.model);
+
+            // Initialize modules
+            this.colorPicker = Alpine.reactive(colorPickerModule(this));
+            this.action = Alpine.reactive(textActionsModule(this));
+            this.image = Alpine.reactive(imageModule(this));
+            this.link = Alpine.reactive(linkModule(this));
+            this.link.init(this.editor, this.$refs.linkBtn);
+
+            // Attaches global listeners once if multiple editors
+            if (!window.__xform_editor_listeners__) {
+                window.__xform_editor_listeners__ = true;
+                window.addEventListener('editImage', e => this.openImageEditor(e));
+                window.addEventListener('insertImage', e => this.insertImage(e));
+                document.addEventListener('selectionchange', this.updateFormattingState.bind(this));
+            }
+
+            // Attach editor-specific listeners
+            this.attachEditorListeners();
+        },
+
         attachEditorListeners() {
-            this.editor.addEventListener('click', e => this.image.handleClick(e));
-            this.editor.addEventListener('dragstart', e => this.image.handleDragStart(e));
-            this.editor.addEventListener('dragend', e => this.image.handleDragEnd(e));
-            this.editor.addEventListener('keydown', e => {
+            if (!this.$refs.editor || !this.$refs.editor.id) return;
+
+            this.$refs.editor.addEventListener('click', e => this.image.handleClick(e));
+            this.$refs.editor.addEventListener('dragstart', e => this.image.handleDragStart(e));
+            this.$refs.editor.addEventListener('dragend', e => this.image.handleDragEnd(e));
+            this.$refs.editor.addEventListener('keydown', e => {
                 if (e.key === 'Tab') {
                     e.preventDefault();
                     this.action.changeIndent(!e.shiftKey);
@@ -1116,28 +1137,22 @@ export default function (Alpine) {
             });
 
             // Clean paste (remove unwanted formatting)
-            this.editor.addEventListener('paste', e => {
+            this.$refs.editor.addEventListener('paste', e => {
                 e.preventDefault();
                 const text = (e.clipboardData || window.clipboardData).getData('text/plain');
                 document.execCommand('insertText', false, text);
             });
         },
 
-        // Debounced save (prevent spam updates)
-        save: Alpine.debounce(function () {
-            if (this.editor) {
-                this.wire.set(this.model, this.editor.innerHTML, false);
-            }
-        }, 400),
-
         openImageEditor(event) {
             const data = event.detail;
             if (!this.image) return console.error('Image module not initialized');
             this.image.src = data.url;
             this.image.path = data.path;
-            // Use width/height if provided
+
             if (data.width) this.image.width = data.width;
             if (data.height) this.image.height = data.height;
+
             this.image.init();
             this.image.showModal = true;
         },
@@ -1145,10 +1160,10 @@ export default function (Alpine) {
         insertImage() {
             this.image.insertImage();
             this.image.showModal = false;
+            this.save();
         },
 
         // --- Formatting Management ---
-
         clearFormatting() {
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
@@ -1210,7 +1225,7 @@ export default function (Alpine) {
 
             [...element.children].forEach(child => {
                 if (
-                    ['DIV', 'P', 'H1','H2','H3','H4','H5','H6','SPAN','CODE'].includes(child.tagName) &&
+                    ['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'CODE'].includes(child.tagName) &&
                     !child.textContent.trim() &&
                     !child.hasChildNodes()
                 ) {
